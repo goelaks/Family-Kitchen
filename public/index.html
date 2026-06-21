@@ -1,40 +1,26 @@
-Add these lines inside the <head> tag of your existing public/index.html:
-
-<!-- PWA Manifest -->
-<link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#F4A200" />
-<meta name="mobile-web-app-capable" content="yes" />
-
-<!-- iOS PWA support -->
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Family Kitchen" />
-
-<!-- App Icon (emoji fallback) -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨‍👩‍👧‍👦</text></svg>" />
-
-Your index.html <head> should look something like this when done:
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#F4A200" />
+    <meta name="description" content="Family Kitchen - Joint Family Meal Planner by Revive Healthcare" />
     <title>Family Kitchen</title>
 
-    <!-- ADD THESE ↓ -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#F4A200" />
-    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- iOS PWA support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Family Kitchen" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨‍👩‍👧‍👦</text></svg>" />
-    <!-- ADD THESE ↑ -->
+    <meta name="mobile-web-app-capable" content="yes" />
 
+    <!-- App Icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨‍👩‍👧‍👦</text></svg>" />
   </head>
   <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    ...
   </body>
 </html>
