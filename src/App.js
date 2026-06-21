@@ -636,15 +636,22 @@ function InvitePopup({ show, onClose, showToast, initialEmail="", extraAction=nu
             <div style={{ fontSize:52 }}>📬</div>
             <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#1A1A2E" }}>Joining link sent!</h3>
             <p style={{ fontSize:13, color:"#888", marginTop:8, lineHeight:1.7 }}>
-              We emailed a joining link to <b>{email}</b>.
+              Email sent to <b>{email}</b>.<br/>
+              Also share the link directly via WhatsApp:
             </p>
-            {extraAction && (
-              <button
-                onClick={()=>{ extraAction(email); handleClose(); }}
-                style={{ width:"100%", marginTop:16, background:"#25D366", color:"#fff", border:"none", padding:"12px", borderRadius:12, fontWeight:700, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-                <span style={{ fontSize:20 }}>💬</span> Also send via WhatsApp
-              </button>
-            )}
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Hi! You have been invited to join our Family Kitchen meal planner 👨‍👩‍👧‍👦
+
+Tap this link to join:
+https://family-kitchen-gamma-rust.vercel.app?invite=true
+
+When it opens, enter this email: ${email}
+Then tap "Send Joining Link" — done!`)}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", marginTop:16, background:"#25D366", color:"#fff", padding:"13px", borderRadius:12, fontWeight:700, fontSize:15, textDecoration:"none" }}>
+              <span style={{ fontSize:20 }}>💬</span> Send via WhatsApp
+            </a>
             <button onClick={handleClose} className="btn btn-g" style={{ marginTop:10, width:"100%" }}>Done</button>
           </div>
         ) : (
@@ -2023,10 +2030,6 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
         initialEmail={inviteEmail}
         onClose={()=>{ setShowInvitePop(false); setInviteEmail(""); }}
         showToast={showToast}
-        extraAction={(email) => {
-          const m = members.find(x=>x.email===email);
-          if (m) sendWhatsAppInvite(m, `https://family-kitchen-gamma-rust.vercel.app?invite=true`);
-        }}
       />
 
       <div style={{ display:"grid", gap:12 }}>
@@ -2045,11 +2048,28 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
                 {isThisHead && <span className="badge" style={{ background:"#fff8e1", color:"#a87800" }}>★ Head</span>}
                 {!isThisHead && isHead && <button className="btn btn-g btn-sm" onClick={()=>setHead(m)} style={{ fontSize:11 }}>Make Head</button>}
                 {!m.auth_id && isHead && (
-                  <button
-                    onClick={()=>resendInvite(m)}
-                    style={{ background:"#e8f5e9", color:"#2D6A4F", border:"1px solid #c8e6c9", padding:"4px 10px", borderRadius:8, fontSize:11, cursor:"pointer", fontWeight:600 }}>
-                    📤 Share Invite
-                  </button>
+                  <div style={{ display:"flex", gap:6 }}>
+                    <button
+                      onClick={()=>resendInvite(m)}
+                      style={{ background:"#e8f5e9", color:"#2D6A4F", border:"1px solid #c8e6c9", padding:"4px 10px", borderRadius:8, fontSize:11, cursor:"pointer", fontWeight:600 }}>
+                      📧 Send Link
+                    </button>
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`Hi ${m.name}! You have been invited to join our Family Kitchen meal planner 👨‍👩‍👧‍👦
+
+Tap this link to join:
+https://family-kitchen-gamma-rust.vercel.app?invite=true
+
+When it opens, enter this email: ${m.email}
+Then tap "Send Joining Link" — done!
+
+(Family: ${family.name})`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ background:"#25D366", color:"#fff", border:"none", padding:"4px 10px", borderRadius:8, fontSize:11, fontWeight:600, textDecoration:"none", display:"flex", alignItems:"center", gap:4 }}>
+                      💬 WhatsApp
+                    </a>
+                  </div>
                 )}
                 {m.id!==member.id && isHead && <button className="btn btn-danger btn-sm" onClick={()=>removeMember(m)}>Remove</button>}
               </div>
