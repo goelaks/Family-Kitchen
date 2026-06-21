@@ -175,7 +175,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#FFF8F0;}
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [screen, setScreen]   = useState("login");   // login | app
+  const [screen, setScreen]   = useState("login");   // login | app | resetpw
   const [authToken, setAuthToken] = useState(null);
   const [authUser, setAuthUser]   = useState(null);  // supabase auth user
   const [member, setMember]   = useState(null);      // members table row
@@ -191,6 +191,22 @@ export default function App() {
   const [toast,   setToast]   = useState(null);
   const [loading, setLoading] = useState(false);
   const [dbReady, setDbReady] = useState(false);
+  const [recoveryToken, setRecoveryToken] = useState(null); // for password reset
+
+  // ── Detect Supabase recovery redirect (hash contains access_token) ──────────
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+    const params = new URLSearchParams(hash.replace("#",""));
+    const accessToken = params.get("access_token");
+    const type        = params.get("type");
+    if (accessToken && type === "recovery") {
+      // Clear the hash from URL so it doesn't persist
+      window.history.replaceState(null, "", window.location.pathname);
+      setRecoveryToken(accessToken);
+      setScreen("resetpw");
+    }
+  }, []);
 
   const showToast = useCallback((msg, type="success") => {
     setToast({ msg, type });
@@ -311,6 +327,19 @@ export default function App() {
     return Object.values(ingMap);
   };
 
+  // ── Password Reset screen (after Supabase recovery redirect) ───────────────
+  if (screen==="resetpw") return (
+    <>
+      <style>{CSS}</style>
+      {toast && <div className="toast" style={{ background: toast.type==="error"?"#C1440E":"#2D6A4F" }}>{toast.msg}</div>}
+      <ResetPasswordScreen
+        recoveryToken={recoveryToken}
+        onDone={() => { setRecoveryToken(null); setScreen("login"); }}
+        showToast={(msg,type) => { setToast({msg,type}); setTimeout(()=>setToast(null),3200); }}
+      />
+    </>
+  );
+
   if (screen==="login") return (
     <>
       <style>{CSS}</style>
@@ -399,6 +428,74 @@ export default function App() {
         </nav>
       </div>
     </>
+  );
+}
+
+// ─── RESET PASSWORD SCREEN (after Supabase magic link redirect) ─────────────
+function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
+  const [newPw,    setNewPw]    = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [busy,     setBusy]     = useState(false);
+  const [done,     setDone]     = useState(false);
+
+  const handleReset = async () => {
+    if (newPw.length < 6)   { showToast("Password must be at least 6 characters","error"); return; }
+    if (newPw !== confirm)   { showToast("Passwords do not match","error"); return; }
+    setBusy(true);
+    try {
+      const res = await fetch(`${SB_URL}/auth/v1/user`, {
+        method:"PUT",
+        headers:{ ...H, Authorization:`Bearer ${recoveryToken}` },
+        body: JSON.stringify({ password: newPw })
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.msg||d.error_description||"Failed to update password");
+      setDone(true);
+      showToast("Password updated successfully! Please sign in.","success");
+      setTimeout(() => onDone(), 2500);
+    } catch(e) { showToast(e.message,"error"); }
+    setBusy(false);
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(150deg,#FFF8F0,#FFF0CC 60%,#FFF8F0)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+      <div style={{ width:"100%", maxWidth:420 }}>
+        <div style={{ textAlign:"center", marginBottom:28 }}>
+          <div style={{ fontSize:64 }}>🔒</div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, color:"#1A1A2E", marginTop:10 }}>Set New Password</h1>
+          <p style={{ color:"#999", fontSize:13, marginTop:6 }}>Choose a strong password for your account</p>
+        </div>
+        <div style={{ background:"#fff", borderRadius:20, padding:28, border:"1px solid #ede5d8" }}>
+          {done ? (
+            <div style={{ textAlign:"center", padding:20 }}>
+              <div style={{ fontSize:52 }}>✅</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#2D6A4F" }}>Password Updated!</div>
+              <p style={{ color:"#888", fontSize:13, marginTop:8 }}>Redirecting you to sign in...</p>
+            </div>
+          ) : (
+            <>
+              <div style={{ marginBottom:16 }}>
+                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>New Password</label>
+                <PwInput value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
+              </div>
+              <div style={{ marginBottom:22 }}>
+                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>Confirm Password</label>
+                <PwInput value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" />
+              </div>
+              <button
+                onClick={handleReset}
+                disabled={busy}
+                style={{ width:"100%", background:"#F4A200", color:"#fff", border:"none", padding:14, borderRadius:12, fontWeight:700, fontSize:16, cursor:busy?"not-allowed":"pointer", opacity:busy?0.7:1 }}>
+                {busy ? "Updating..." : "Update Password →"}
+              </button>
+            </>
+          )}
+        </div>
+        <div style={{ marginTop:14, background:"rgba(45,106,79,.08)", borderRadius:12, padding:"9px 14px", textAlign:"center" }}>
+          <p style={{ fontSize:12, color:"#2D6A4F" }}>✅ Live — Designed by Revive Healthcare</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
