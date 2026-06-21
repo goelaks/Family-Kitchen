@@ -201,11 +201,40 @@ export default function App() {
     const accessToken = params.get("access_token");
     const type        = params.get("type");
     if (accessToken && type === "recovery") {
-      // Clear the hash from URL so it doesn't persist
       window.history.replaceState(null, "", window.location.pathname);
       setRecoveryToken(accessToken);
       setScreen("resetpw");
     }
+  }, []);
+
+  // ── Restore saved session on app load (remember me for 48 hrs) ──────────────
+  useEffect(() => {
+    const raw = localStorage.getItem("fk_session");
+    if (!raw) return;
+    try {
+      const session = JSON.parse(raw);
+      const now = Date.now();
+      if (!session.expiresAt || now > session.expiresAt) {
+        localStorage.removeItem("fk_session");
+        return;
+      }
+      // Session is valid — restore without asking to login again
+      setAuthToken(session.token);
+      setAuthUser(session.sbUser);
+      setMember(session.member);
+      setLoading(true);
+      loadAll(session.member.family_id).then(() => {
+        setScreen("app");
+        setLoading(false);
+        setTimeout(() => initPush(session.member.id), 2000);
+      }).catch(() => {
+        localStorage.removeItem("fk_session");
+        setLoading(false);
+      });
+    } catch(e) {
+      localStorage.removeItem("fk_session");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const showToast = useCallback((msg, type="success") => {
@@ -348,6 +377,9 @@ export default function App() {
         await loadAll(fid);
         setScreen("app");
         showToast(`Welcome, ${mem.name}! 🎉`);
+        // Save session for 48 hours (remember me)
+        const expiresAt = Date.now() + 48 * 60 * 60 * 1000;
+        localStorage.setItem("fk_session", JSON.stringify({ token, sbUser, member:mem, expiresAt }));
         // Request push permission after a short delay so UI is ready
         setTimeout(() => initPush(mem.id), 2000);
       }} showToast={showToast} />
@@ -382,7 +414,7 @@ export default function App() {
           </div>
           <div style={{ display:"flex", gap:6, alignItems:"center" }}>
             <span style={{ fontSize:11, color:"#bbb", marginRight:4 }}>ID: {family?.id?.slice(0,8)}</span>
-            <button className="btn btn-g btn-sm" onClick={async()=>{ if(authToken) await sbSignOut(authToken); setScreen("login"); setMember(null); setFamily(null); }}>Sign Out</button>
+            <button className="btn btn-g btn-sm" onClick={async()=>{ if(authToken) await sbSignOut(authToken); localStorage.removeItem("fk_session"); setAuthToken(null); setAuthUser(null); setScreen("login"); setMember(null); setFamily(null); setMembers([]); setFoods([]); setPlanner([]); }}>Sign Out</button>
           </div>
         </header>
 
