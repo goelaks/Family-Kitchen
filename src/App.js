@@ -69,22 +69,23 @@ async function sbSignOut(token) {
     method:"POST", headers:{...H, Authorization:`Bearer ${token}`}
   });
 }
-async function sbSendOTP(email) {
-  const res = await fetch(`${SB_URL}/auth/v1/otp`, {
+async function sbSendResetEmail(email) {
+  // Sends a password reset link to the user's email
+  const res = await fetch(`${SB_URL}/auth/v1/recover`, {
     method:"POST", headers:H,
-    body:JSON.stringify({ email, create_user:false })
+    body:JSON.stringify({ email })
   });
   const d = await res.json();
-  if (!res.ok) throw new Error(d.msg||d.error_description||"Failed to send OTP. Is this email registered?");
+  if (!res.ok) throw new Error(d.msg||d.error_description||"Email not found. Please check and try again.");
   return d;
 }
 async function sbVerifyOTP(email, otp) {
   const res = await fetch(`${SB_URL}/auth/v1/verify`, {
     method:"POST", headers:H,
-    body:JSON.stringify({ type:"email", email, token:otp })
+    body:JSON.stringify({ type:"recovery", email, token:otp })
   });
   const d = await res.json();
-  if (!res.ok) throw new Error(d.msg||d.error_description||"Invalid or expired OTP");
+  if (!res.ok) throw new Error(d.msg||d.error_description||"Invalid or expired code. Please request a new one.");
   return d;
 }
 async function sbUpdatePassword(accessToken, newPassword) {
@@ -555,8 +556,8 @@ function LoginScreen({ onLogin, showToast }) {
     if (!fpEmail.trim()) { showToast("Please enter your email","error"); return; }
     setBusy(true);
     try {
-      await sbSendOTP(fpEmail.trim().toLowerCase());
-      showToast("OTP sent! Check your email 📧");
+      await sbSendResetEmail(fpEmail.trim().toLowerCase());
+      showToast("Reset email sent! Check your inbox 📧");
       setStep("otp");
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
@@ -634,23 +635,40 @@ function LoginScreen({ onLogin, showToast }) {
     <div className="card" style={{ padding:24 }}>
       <div style={{ textAlign:"center", marginBottom:20 }}>
         <div style={{ fontSize:48 }}>📧</div>
-        <p style={{ fontSize:13, color:"#555", marginTop:10 }}>OTP sent to <b>{fpEmail}</b></p>
-        <p style={{ fontSize:12, color:"#aaa", marginTop:4 }}>Check your inbox (and spam folder)</p>
+        <h3 className="serif" style={{ fontSize:18, marginTop:12 }}>Check your email</h3>
+        <p style={{ fontSize:13, color:"#555", marginTop:8 }}>We sent a reset link to <b>{fpEmail}</b></p>
       </div>
+
+      {/* Step by step instructions */}
+      <div style={{ background:"#f9f9f9", borderRadius:12, padding:16, marginBottom:16 }}>
+        <div style={{ fontWeight:700, fontSize:13, color:"#1A1A2E", marginBottom:12 }}>Follow these steps:</div>
+        {[
+          ["1️⃣","Open the email from Supabase in your inbox (check spam too)"],
+          ["2️⃣","Click the reset link in that email — it opens a page"],
+          ["3️⃣","Copy the code from the URL — it looks like a long string after token="],
+          ["4️⃣","Paste it below and click Verify"],
+        ].map(([num, txt]) => (
+          <div key={num} style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:10 }}>
+            <span style={{ fontSize:18, flexShrink:0 }}>{num}</span>
+            <span style={{ fontSize:13, color:"#555", lineHeight:1.5 }}>{txt}</span>
+          </div>
+        ))}
+      </div>
+
       <div style={{ marginBottom:16 }}>
-        <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>6-Digit OTP</label>
-        <input className="input" value={fpOtp} onChange={e=>setFpOtp(e.target.value)} placeholder="123456" maxLength={6} style={{ letterSpacing:6, fontSize:22, textAlign:"center", fontWeight:700 }} />
+        <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Reset Code (from the link)</label>
+        <input className="input" value={fpOtp} onChange={e=>setFpOtp(e.target.value)} placeholder="Paste the token from the email link" style={{ fontSize:13 }} />
       </div>
       <button className="btn btn-p" onClick={handleVerifyOTP} disabled={busy} style={{ width:"100%", padding:12 }}>
-        {busy ? "Verifying…" : "Verify OTP →"}
+        {busy ? "Verifying..." : "Verify & Continue →"}
       </button>
       <div style={{ textAlign:"center", marginTop:12 }}>
-        <span style={{ fontSize:12, color:"#aaa" }}>Didn't get it? </span>
-        <span style={{ fontSize:12, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setBusy(false); handleSendOTP(); }}>Resend OTP</span>
+        <span style={{ fontSize:12, color:"#aaa" }}>Didn't receive it? </span>
+        <span style={{ fontSize:12, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setBusy(false); handleSendOTP(); }}>Resend email</span>
       </div>
       <button onClick={()=>setStep("forgot")} style={{ display:"block", margin:"12px auto 0", background:"none", border:"none", color:"#ccc", fontSize:12, cursor:"pointer" }}>← Change email</button>
     </div>,
-    "Enter OTP", null, "🔑"
+    "Reset Password", null, "🔑"
   );
 
   if (step === "newpw") return wrap(
