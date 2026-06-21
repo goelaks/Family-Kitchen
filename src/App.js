@@ -267,8 +267,7 @@ export default function App() {
     } catch(e) {
       localStorage.removeItem("fk_session");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // eslint-disable-line
 
   const showToast = useCallback((msg, type="success") => {
     setToast({ msg, type });
