@@ -654,8 +654,8 @@ function LoginScreen({ onLogin, showToast }) {
     setBusy(true);
     try {
       await sbSendResetEmail(fpEmail.trim().toLowerCase());
-      showToast("Reset email sent! Check your inbox 📧");
-      setStep("otp");
+      showToast("Reset link sent! Check your inbox 📧");
+      setStep("sent");
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
@@ -718,7 +718,7 @@ function LoginScreen({ onLogin, showToast }) {
         <input className="input" value={fpEmail} onChange={e=>setFpEmail(e.target.value)} placeholder="you@email.com" type="email" autoComplete="email" />
       </div>
       <button className="btn btn-p" onClick={handleSendOTP} disabled={busy} style={{ width:"100%", padding:12 }}>
-        {busy ? "Sending…" : "📧 Send OTP"}
+        {busy ? "Sending…" : "📧 Send Reset Link"}
       </button>
       <div style={{ textAlign:"center", marginTop:14 }}>
         <span style={{ fontSize:12, color:"#aaa" }}>Need to reset your </span>
@@ -728,44 +728,29 @@ function LoginScreen({ onLogin, showToast }) {
     "Forgot Password", "Reset your account password via email OTP", "🔐"
   );
 
-  if (step === "otp") return wrap(
-    <div className="card" style={{ padding:24 }}>
-      <div style={{ textAlign:"center", marginBottom:20 }}>
-        <div style={{ fontSize:48 }}>📧</div>
-        <h3 className="serif" style={{ fontSize:18, marginTop:12 }}>Check your email</h3>
-        <p style={{ fontSize:13, color:"#555", marginTop:8 }}>We sent a reset link to <b>{fpEmail}</b></p>
+  if (step === "sent") return wrap(
+    <div className="card" style={{ padding:28, textAlign:"center" }}>
+      <div style={{ fontSize:64, marginBottom:16 }}>📬</div>
+      <h3 className="serif" style={{ fontSize:22, color:"#1A1A2E", marginBottom:10 }}>Check your inbox</h3>
+      <p style={{ fontSize:14, color:"#555", lineHeight:1.7, marginBottom:6 }}>
+        We sent a password reset link to
+      </p>
+      <p style={{ fontSize:15, fontWeight:700, color:"#1A1A2E", marginBottom:20 }}>{fpEmail}</p>
+      <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:16, marginBottom:24, textAlign:"left" }}>
+        <div style={{ fontWeight:700, fontSize:13, color:"#2D6A4F", marginBottom:8 }}>What to do next:</div>
+        <div style={{ fontSize:13, color:"#555", lineHeight:1.8 }}>
+          1. Open the email from Supabase<br/>
+          2. Click the <b>"Reset Password"</b> link<br/>
+          3. You'll be brought back here to set your new password
+        </div>
       </div>
-
-      {/* Step by step instructions */}
-      <div style={{ background:"#f9f9f9", borderRadius:12, padding:16, marginBottom:16 }}>
-        <div style={{ fontWeight:700, fontSize:13, color:"#1A1A2E", marginBottom:12 }}>Follow these steps:</div>
-        {[
-          ["1️⃣","Open the email from Supabase in your inbox (check spam too)"],
-          ["2️⃣","Click the reset link in that email — it opens a page"],
-          ["3️⃣","Copy the code from the URL — it looks like a long string after token="],
-          ["4️⃣","Paste it below and click Verify"],
-        ].map(([num, txt]) => (
-          <div key={num} style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:10 }}>
-            <span style={{ fontSize:18, flexShrink:0 }}>{num}</span>
-            <span style={{ fontSize:13, color:"#555", lineHeight:1.5 }}>{txt}</span>
-          </div>
-        ))}
+      <div style={{ textAlign:"center" }}>
+        <span style={{ fontSize:13, color:"#aaa" }}>Didn't receive it? </span>
+        <span style={{ fontSize:13, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setBusy(false); handleSendOTP(); }}>Resend link</span>
       </div>
-
-      <div style={{ marginBottom:16 }}>
-        <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Reset Code (from the link)</label>
-        <input className="input" value={fpOtp} onChange={e=>setFpOtp(e.target.value)} placeholder="Paste the token from the email link" style={{ fontSize:13 }} />
-      </div>
-      <button className="btn btn-p" onClick={handleVerifyOTP} disabled={busy} style={{ width:"100%", padding:12 }}>
-        {busy ? "Verifying..." : "Verify & Continue →"}
-      </button>
-      <div style={{ textAlign:"center", marginTop:12 }}>
-        <span style={{ fontSize:12, color:"#aaa" }}>Didn't receive it? </span>
-        <span style={{ fontSize:12, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setBusy(false); handleSendOTP(); }}>Resend email</span>
-      </div>
-      <button onClick={()=>setStep("forgot")} style={{ display:"block", margin:"12px auto 0", background:"none", border:"none", color:"#ccc", fontSize:12, cursor:"pointer" }}>← Change email</button>
+      <button onClick={()=>setStep("forgot")} style={{ display:"block", margin:"16px auto 0", background:"none", border:"none", color:"#bbb", fontSize:12, cursor:"pointer" }}>← Change email</button>
     </div>,
-    "Reset Password", null, "🔑"
+    "Reset Link Sent", null, "📧"
   );
 
   if (step === "newpw") return wrap(
