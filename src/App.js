@@ -191,7 +191,9 @@ export default function App() {
   const [toast,   setToast]   = useState(null);
   const [loading, setLoading] = useState(false);
   const [dbReady, setDbReady] = useState(false);
-  const [recoveryToken, setRecoveryToken] = useState(null); // for password reset
+  const [recoveryToken,   setRecoveryToken]   = useState(null); // for password reset
+  const [installPrompt,   setInstallPrompt]   = useState(null); // PWA install prompt
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   // ── Detect Supabase recovery redirect (hash contains access_token) ──────────
   useEffect(() => {
@@ -206,6 +208,37 @@ export default function App() {
       setScreen("resetpw");
     }
   }, []);
+
+  // ── Capture PWA install prompt ────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    // Check if already installed (standalone mode)
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setShowInstallBanner(false);
+    }
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) {
+      // Fallback for iOS (Safari doesn't support beforeinstallprompt)
+      setShowInstallBanner(false);
+      showToast("On iPhone: tap Share → Add to Home Screen 📱", "info");
+      return;
+    }
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") {
+      showToast("Family Kitchen added to your home screen! 🎉");
+      setShowInstallBanner(false);
+      setInstallPrompt(null);
+    }
+  };
 
   // ── Restore saved session on app load (remember me for 48 hrs) ──────────────
   useEffect(() => {
@@ -414,6 +447,14 @@ export default function App() {
           </div>
           <div style={{ display:"flex", gap:6, alignItems:"center" }}>
             <span style={{ fontSize:11, color:"#bbb", marginRight:4 }}>ID: {family?.id?.slice(0,8)}</span>
+            {showInstallBanner && (
+              <button
+                onClick={handleInstall}
+                style={{ background:"#2D6A4F", color:"#fff", border:"none", padding:"7px 12px", borderRadius:9, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}
+                title="Add to Home Screen">
+                📲 Install App
+              </button>
+            )}
             <button className="btn btn-g btn-sm" onClick={async()=>{ if(authToken) await sbSignOut(authToken); localStorage.removeItem("fk_session"); setAuthToken(null); setAuthUser(null); setScreen("login"); setMember(null); setFamily(null); setMembers([]); setFoods([]); setPlanner([]); }}>Sign Out</button>
           </div>
         </header>
@@ -439,7 +480,7 @@ export default function App() {
 
           {/* MAIN */}
           <main className="main-pad" style={{ flex:1, padding:"22px 24px", overflowY:"auto", paddingBottom:120 }}>
-            {view==="dashboard" && !selDay && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={setSelDay} MICONS={MICONS} MCOLS={MCOLS} />}
+            {view==="dashboard" && !selDay && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={setSelDay} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} />}
             {view==="dashboard" && selDay && !selMeal && <DayView day={selDay} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onBack={()=>setSelDay(null)} onMealClick={setSelMeal} MICONS={MICONS} MCOLS={MCOLS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} member={member} />}
             {view==="dashboard" && selDay && selMeal && <MealView day={selDay} meal={selMeal} foods={foods} member={member} onBack={()=>setSelMeal(null)} onAdd={addToPlanner} getMealSummary={getMealSummary} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="foods"     && <FoodsView foods={foods} setFoods={setFoods} showToast={showToast} MEALS={MEALS} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
@@ -752,10 +793,7 @@ function LoginScreen({ onLogin, showToast }) {
       <button className="btn btn-p" onClick={handleSendOTP} disabled={busy} style={{ width:"100%", padding:12 }}>
         {busy ? "Sending…" : "📧 Send Reset Link"}
       </button>
-      <div style={{ textAlign:"center", marginTop:14 }}>
-        <span style={{ fontSize:12, color:"#aaa" }}>Need to reset your </span>
-        <span style={{ fontSize:12, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>setStep("familyreset")}>Family Password instead?</span>
-      </div>
+
     </div>,
     "Forgot Password", "Reset your account password via email OTP", "🔐"
   );
@@ -803,48 +841,7 @@ function LoginScreen({ onLogin, showToast }) {
     "New Password", "Choose a strong password", "🔒"
   );
 
-  if (step === "familyreset") return wrap(
-    <div className="card" style={{ padding:24 }}>
-      <button onClick={()=>setStep("auth")} style={{ background:"none", border:"none", color:"#aaa", cursor:"pointer", fontSize:13, marginBottom:16 }}>← Back</button>
-      <h3 className="serif" style={{ fontSize:20, marginBottom:6 }}>Reset Family Password</h3>
-      <p style={{ fontSize:13, color:"#999", marginBottom:18 }}>Only the Kitchen Head can do this. You must be signed in first — sign in, then use the Family section inside the app to reset.<br/><br/>Or if you're locked out, sign in to your account below and we'll verify you're the head.</p>
-      {!authUser ? (
-        <>
-          <div style={{ marginBottom:12 }}>
-            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Your Email</label>
-            <input className="input" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com" type="email" />
-          </div>
-          <div style={{ marginBottom:16 }}>
-            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Your Password</label>
-            <PwInput value={password} onChange={e=>setPassword(e.target.value)} />
-          </div>
-          <button className="btn btn-p" onClick={async()=>{ setBusy(true); try{ const {access_token,user}=await sbSignIn(email.trim().toLowerCase(),password); setAuthToken(access_token); setAuthUser(user); showToast("Verified! Now enter new family password."); }catch(e){showToast(e.message,"error");} setBusy(false); }} disabled={busy} style={{ width:"100%", padding:12, marginBottom:14 }}>
-            {busy?"Verifying…":"Sign In to Verify →"}
-          </button>
-        </>
-      ) : (
-        <>
-          <div style={{ background:"#e8f5e9", borderRadius:10, padding:"8px 12px", fontSize:12, color:"#2D6A4F", marginBottom:16, fontWeight:600 }}>✓ Signed in as {authUser.email}</div>
-          <div style={{ marginBottom:12 }}>
-            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Family ID</label>
-            <input className="input" value={frFamId} onChange={e=>setFrFamId(e.target.value)} placeholder="FAM-XXXXXX" />
-          </div>
-          <div style={{ marginBottom:12 }}>
-            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>New Family Password</label>
-            <PwInput value={frNewPw} onChange={e=>setFrNewPw(e.target.value)} placeholder="New family password" autoComplete="new-password" />
-          </div>
-          <div style={{ marginBottom:18 }}>
-            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Confirm Family Password</label>
-            <PwInput value={frConfirm} onChange={e=>setFrConfirm(e.target.value)} placeholder="Re-enter" autoComplete="new-password" />
-          </div>
-          <button className="btn btn-p" onClick={handleFamilyReset} disabled={busy} style={{ width:"100%", padding:12 }}>
-            {busy?"Updating…":"🏠 Update Family Password"}
-          </button>
-        </>
-      )}
-    </div>,
-    "Family Password Reset", null, "🏠"
-  );
+
 
   if (step === "family") return (
     <div style={{ minHeight:"100vh", background:BG, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
@@ -937,17 +934,14 @@ function LoginScreen({ onLogin, showToast }) {
         {busy ? "Please wait…" : authMode==="signin" ? "Sign In →" : "Create Account →"}
       </button>
 
-      <div style={{ textAlign:"center", marginTop:16, paddingTop:14, borderTop:"1px solid #f5f0e8" }}>
-        <span style={{ fontSize:12, color:"#aaa" }}>Need to reset your </span>
-        <span style={{ fontSize:12, color:"#6B5CE7", cursor:"pointer", fontWeight:600 }} onClick={()=>setStep("familyreset")}>family password?</span>
-      </div>
+
     </div>,
     "Family Kitchen", "Plan meals together, eat happily"
   );
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function DashboardView({ days, meals, planner, getMealSummary, onDayClick, MICONS, MCOLS }) {
+function DashboardView({ days, meals, planner, getMealSummary, onDayClick, MICONS, MCOLS, showInstallBanner, onInstall }) {
   const today = new Date().toLocaleDateString("en",{weekday:"long"});
   const totalWeek = planner.length;
   const finalizedCount = planner.filter(p=>p.finalized).length;
@@ -958,6 +952,19 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, MICON
         <h2 className="serif" style={{ fontSize:26, color:"#1A1A2E" }}>Weekly Meal Planner</h2>
         <p style={{ color:"#999", fontSize:13, marginTop:4 }}>{totalWeek} selections this week · {finalizedCount} finalized</p>
       </div>
+      {/* PWA Install Banner */}
+      {showInstallBanner && (
+        <div style={{ background:"linear-gradient(135deg,#2D6A4F,#1a4a35)", borderRadius:14, padding:"14px 18px", marginBottom:18, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+          <div>
+            <div style={{ color:"#fff", fontWeight:700, fontSize:14 }}>📲 Add to Home Screen</div>
+            <div style={{ color:"rgba(255,255,255,.75)", fontSize:12, marginTop:3 }}>Access Family Kitchen like an app — no browser needed</div>
+          </div>
+          <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+            <button onClick={onInstall} style={{ background:"#F4A200", color:"#fff", border:"none", padding:"8px 16px", borderRadius:9, fontWeight:700, fontSize:13, cursor:"pointer" }}>Install</button>
+            <button onClick={()=>onInstall && document.querySelector(".install-banner")?.remove()} style={{ background:"rgba(255,255,255,.15)", color:"#fff", border:"none", padding:"8px 10px", borderRadius:9, fontSize:13, cursor:"pointer" }}>✕</button>
+          </div>
+        </div>
+      )}
       {/* week summary strip */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:22 }} className="grid-2">
         {meals.map(m=>{
@@ -1843,8 +1850,11 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
   const [adding, setAdding] = useState(false);
   const [newM,   setNewM]   = useState({ name:"", email:"" });
   const [busy,   setBusy]   = useState(false);
-  const [editFam,setEditFam]= useState(false);
-  const [famName,setFamName]= useState(family?.name||"");
+  const [editFam,  setEditFam]  = useState(false);
+  const [famName,  setFamName]  = useState(family?.name||"");
+  const [showReset,setShowReset]= useState(false);
+  const [frNewPw,  setFrNewPw]  = useState("");
+  const [frConfirm,setFrConfirm]= useState("");
 
   const addMember = async () => {
     if (!newM.name||!newM.email) { showToast("Name and email required","error"); return; }
@@ -1893,6 +1903,19 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
   const renameFamily = async () => {
     try { await sbPatch("families",`id=eq.${family.id}`,{ name:famName }); setFamily(f=>({...f,name:famName})); setEditFam(false); showToast("Family name updated!"); }
     catch(e) { showToast(e.message,"error"); }
+  };
+
+  const resetFamilyPassword = async () => {
+    if (frNewPw.length < 4)    { showToast("Password too short (min 4 characters)","error"); return; }
+    if (frNewPw !== frConfirm) { showToast("Passwords do not match","error"); return; }
+    setBusy(true);
+    try {
+      await sbPatch("families",`id=eq.${family.id}`,{ password:frNewPw });
+      setFamily(f=>({...f, password:frNewPw}));
+      showToast("Family password updated! Share the new password with your family. 🔑");
+      setShowReset(false); setFrNewPw(""); setFrConfirm("");
+    } catch(e) { showToast(e.message,"error"); }
+    setBusy(false);
   };
 
   const renameMember = async (m, name) => {
@@ -1980,15 +2003,38 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
       </div>
 
       <div className="card" style={{ marginTop:22, background:"#f9f5ff", border:"1px solid #e0d5ff" }}>
-        <div style={{ fontWeight:700, fontSize:14, marginBottom:8 }}>🔗 Invite Members to Join</div>
-        <div style={{ background:"#fff", borderRadius:9, padding:"10px 14px", fontFamily:"monospace", fontSize:13, color:"#6B5CE7", border:"1px solid #e0d5ff", wordBreak:"break-all" }}>
+        <div style={{ fontWeight:700, fontSize:14, marginBottom:8 }}>🔗 Family ID &amp; Password</div>
+        <div style={{ background:"#fff", borderRadius:9, padding:"10px 14px", fontFamily:"monospace", fontSize:13, color:"#6B5CE7", border:"1px solid #e0d5ff", wordBreak:"break-all", marginBottom:8 }}>
           Family ID: <b>{family?.id}</b>
         </div>
-        <p style={{ fontSize:12, color:"#888", marginTop:8 }}>
-          <b>Two ways for members to join:</b><br/>
-          1. <b>Invite by email</b> (recommended) — Add their name + email above. They register in the app with that email and auto-join instantly.<br/>
-          2. <b>Share Family ID</b> — They can also use "Join Family" on the login screen with the ID and family password below.
+        <p style={{ fontSize:12, color:"#888", marginBottom:12 }}>
+          Share this Family ID + family password with new members. They use "Join Family" on the login screen to join.
         </p>
+        {isHead && (
+          showReset ? (
+            <div style={{ background:"#fff", borderRadius:10, padding:14, border:"1px solid #ddd", marginTop:4 }}>
+              <div style={{ fontWeight:600, fontSize:13, color:"#1A1A2E", marginBottom:10 }}>🔑 Reset Family Password</div>
+              <div style={{ marginBottom:10 }}>
+                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>New Family Password</label>
+                <PwInput value={frNewPw} onChange={e=>setFrNewPw(e.target.value)} placeholder="New password" autoComplete="new-password" />
+              </div>
+              <div style={{ marginBottom:12 }}>
+                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Confirm Password</label>
+                <PwInput value={frConfirm} onChange={e=>setFrConfirm(e.target.value)} placeholder="Re-enter" autoComplete="new-password" />
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                <button className="btn btn-p" onClick={resetFamilyPassword} disabled={busy} style={{ flex:1 }}>
+                  {busy?"Updating…":"Update Password"}
+                </button>
+                <button className="btn btn-g" onClick={()=>{ setShowReset(false); setFrNewPw(""); setFrConfirm(""); }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={()=>setShowReset(true)} className="btn btn-g" style={{ fontSize:12, width:"100%" }}>
+              🔑 Reset Family Password
+            </button>
+          )
+        )}
       </div>
     </div>
   );
