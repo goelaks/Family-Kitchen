@@ -598,10 +598,13 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
 
 
 // ─── INVITE POPUP ─────────────────────────────────────────────────────────────
-function InvitePopup({ show, onClose, showToast }) {
-  const [email, setEmail] = useState("");
+function InvitePopup({ show, onClose, showToast, initialEmail="", extraAction=null }) {
+  const [email, setEmail] = useState(initialEmail);
   const [busy,  setBusy]  = useState(false);
   const [sent,  setSent]  = useState(false);
+
+  // Update email if initialEmail changes (e.g. different member clicked)
+  React.useEffect(() => { if (initialEmail) setEmail(initialEmail); }, [initialEmail]);
 
   if (!show) return null;
 
@@ -631,12 +634,18 @@ function InvitePopup({ show, onClose, showToast }) {
         {sent ? (
           <div style={{ textAlign:"center", padding:"10px 0" }}>
             <div style={{ fontSize:52 }}>📬</div>
-            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#1A1A2E" }}>Check your inbox!</h3>
+            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#1A1A2E" }}>Joining link sent!</h3>
             <p style={{ fontSize:13, color:"#888", marginTop:8, lineHeight:1.7 }}>
-              We sent a joining link to <b>{email}</b>.<br/>
-              Click it to set your password and join your family.
+              We emailed a joining link to <b>{email}</b>.
             </p>
-            <button onClick={handleClose} className="btn btn-p" style={{ marginTop:20, width:"100%" }}>Done</button>
+            {extraAction && (
+              <button
+                onClick={()=>{ extraAction(email); handleClose(); }}
+                style={{ width:"100%", marginTop:16, background:"#25D366", color:"#fff", border:"none", padding:"12px", borderRadius:12, fontWeight:700, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                <span style={{ fontSize:20 }}>💬</span> Also send via WhatsApp
+              </button>
+            )}
+            <button onClick={handleClose} className="btn btn-g" style={{ marginTop:10, width:"100%" }}>Done</button>
           </div>
         ) : (
           <>
@@ -1872,9 +1881,11 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
   const [busy,   setBusy]   = useState(false);
   const [editFam,  setEditFam]  = useState(false);
   const [famName,  setFamName]  = useState(family?.name||"");
-  const [showReset,setShowReset]= useState(false);
-  const [frNewPw,  setFrNewPw]  = useState("");
-  const [frConfirm,setFrConfirm]= useState("");
+  const [showReset,    setShowReset]    = useState(false);
+  const [frNewPw,      setFrNewPw]      = useState("");
+  const [frConfirm,    setFrConfirm]    = useState("");
+  const [inviteEmail,  setInviteEmail]  = useState("");
+  const [showInvitePop,setShowInvitePop]= useState(false);
 
   const addMember = async () => {
     if (!newM.name||!newM.email) { showToast("Name and email required","error"); return; }
@@ -2021,6 +2032,18 @@ Family ID (if needed): ${family.id}`;
           </div>
         </div>
       )}
+
+      {/* Inline invite popup for FamilyView */}
+      <InvitePopup
+        show={showInvitePop}
+        initialEmail={inviteEmail}
+        onClose={()=>{ setShowInvitePop(false); setInviteEmail(""); }}
+        showToast={showToast}
+        extraAction={(email) => {
+          const m = members.find(x=>x.email===email);
+          if (m) sendWhatsAppInvite(m, `https://family-kitchen-gamma-rust.vercel.app?invite=true`);
+        }}
+      />
 
       <div style={{ display:"grid", gap:12 }}>
         {members.map((m,i)=>{
