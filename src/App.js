@@ -1946,24 +1946,8 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
 
   const resendInvite = (m) => {
     if (!m.email) { showToast("No email address for this member","error"); return; }
-    // Copy invite link to clipboard
-    const link = `https://family-kitchen-gamma-rust.vercel.app`;
-    const msg  = `Hi ${m.name}! You've been invited to join our Family Kitchen meal planner.
-
-1. Open this link: ${link}
-2. Click Register
-3. Use this email to register: ${m.email}
-4. You'll automatically join our family group!
-
-Family ID (if needed): ${family.id}`;
-    if (navigator.share) {
-      navigator.share({ title:"Family Kitchen Invite", text:msg })
-        .catch(()=>{ navigator.clipboard?.writeText(msg); showToast("Invite message copied! Send it to " + m.name,"info"); });
-    } else {
-      navigator.clipboard?.writeText(msg)
-        .then(()=>showToast("Invite message copied to clipboard! Paste it in WhatsApp 📋","info"))
-        .catch(()=>showToast("Invite link: " + link,"info"));
-    }
+    setInviteEmail(m.email);
+    setShowInvitePop(true);
   };
 
   return (
