@@ -515,6 +515,7 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
     if (newPw !== confirm)   { showToast("Passwords do not match","error"); return; }
     setBusy(true);
     try {
+      // Update the password using the recovery token
       const res = await fetch(`${SB_URL}/auth/v1/user`, {
         method:"PUT",
         headers:{ ...H, Authorization:`Bearer ${recoveryToken}` },
@@ -522,9 +523,21 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.msg||d.error_description||"Failed to update password");
+
+      // Get the user email from the recovery token
+      const userEmail = d.email;
+
+      // Check if this email has a pending member slot (invited member)
+      if (userEmail) {
+        const mems = await sbGet("members", `email=eq.${encodeURIComponent(userEmail)}&select=*`);
+        if (mems?.length && !mems[0].auth_id) {
+          // Link their auth account to the pending member slot
+          await sbPatch("members", `id=eq.${mems[0].id}`, { auth_id: d.id || mems[0].id });
+        }
+      }
+
       setDone(true);
-      showToast("Password updated! Signing you in…","success");
-      // Try to sign in automatically after reset
+      showToast("Password set! Please sign in now.","success");
       setTimeout(() => onDone(), 2000);
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
@@ -572,6 +585,75 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
   );
 }
 
+
+// ─── INVITE POPUP ─────────────────────────────────────────────────────────────
+function InvitePopup({ show, onClose, showToast }) {
+  const [email, setEmail] = useState("");
+  const [busy,  setBusy]  = useState(false);
+  const [sent,  setSent]  = useState(false);
+
+  if (!show) return null;
+
+  const handleSend = async () => {
+    const em = email.trim().toLowerCase();
+    if (!em) { showToast("Please enter your email","error"); return; }
+    setBusy(true);
+    try {
+      const invited = await sbGet("members", `email=eq.${encodeURIComponent(em)}&select=family_id,name`);
+      if (!invited?.length) {
+        showToast("This email has not been invited yet. Ask your Kitchen Head to add you first.","error");
+        setBusy(false); return;
+      }
+      await sbSendResetEmail(em);
+      setSent(true);
+      showToast("Joining link sent! Check your inbox. 📧");
+    } catch(e) { showToast(e.message,"error"); }
+    setBusy(false);
+  };
+
+  const handleClose = () => { setEmail(""); setSent(false); setBusy(false); onClose(); };
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)", zIndex:9000, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+      <div style={{ background:"#fff", borderRadius:20, padding:28, width:"100%", maxWidth:400, position:"relative", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
+        <button onClick={handleClose} style={{ position:"absolute", top:14, right:16, background:"none", border:"none", fontSize:24, cursor:"pointer", color:"#aaa", lineHeight:1 }}>×</button>
+        {sent ? (
+          <div style={{ textAlign:"center", padding:"10px 0" }}>
+            <div style={{ fontSize:52 }}>📬</div>
+            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#1A1A2E" }}>Check your inbox!</h3>
+            <p style={{ fontSize:13, color:"#888", marginTop:8, lineHeight:1.7 }}>
+              We sent a joining link to <b>{email}</b>.<br/>
+              Click it to set your password and join your family.
+            </p>
+            <button onClick={handleClose} className="btn btn-p" style={{ marginTop:20, width:"100%" }}>Done</button>
+          </div>
+        ) : (
+          <>
+            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginBottom:6, color:"#1A1A2E" }}>Join Your Family</h3>
+            <p style={{ fontSize:13, color:"#888", marginBottom:20, lineHeight:1.6 }}>
+              Enter the email your Kitchen Head used to invite you. We will send you a link to set your password and join instantly.
+            </p>
+            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>Your Invited Email</label>
+            <input
+              className="input"
+              value={email}
+              onChange={e=>setEmail(e.target.value)}
+              placeholder="email your Kitchen Head added"
+              type="email"
+              autoComplete="email"
+              onKeyDown={e=>e.key==="Enter"&&handleSend()}
+              style={{ marginBottom:16 }}
+            />
+            <button className="btn btn-p" onClick={handleSend} disabled={busy} style={{ width:"100%", padding:13, fontSize:15 }}>
+              {busy ? "Sending..." : "Send Joining Link"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── PASSWORD INPUT with show/hide toggle ────────────────────────────────────
 function PwInput({ value, onChange, placeholder="Password", autoComplete="current-password" }) {
   const [show, setShow] = useState(false);
@@ -588,7 +670,7 @@ function PwInput({ value, onChange, placeholder="Password", autoComplete="curren
       />
       <button
         type="button"
-        onClick={() => setShow(s => !s)}
+        onClick={()=>setShow(s=>!s)}
         style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", fontSize:17, padding:2, lineHeight:1, opacity:.6 }}
         title={show ? "Hide password" : "Show password"}
       >
@@ -599,49 +681,15 @@ function PwInput({ value, onChange, placeholder="Password", autoComplete="curren
 }
 
 // ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
-// Steps:
-//   auth       → Sign In / Register (email + password)
-//   family     → Create Family / Join Family (after first register/login with no family)
-//   forgot     → Enter email to receive OTP
-//   otp        → Enter 6-digit OTP from email
-//   newpw      → Set new password after OTP verified
-//   familyreset→ Kitchen head resets family password (must be signed in)
-function LoginScreen({ onLogin, showToast }) {
-  const [step,       setStep]      = useState("auth");
-  const [authMode,   setAuthMode]  = useState("signin"); // signin | register
-  const [busy,       setBusy]      = useState(false);
-  // Auth form
-  const [username,   setUsername]  = useState("");
-  const [email,      setEmail]     = useState("");
-  const [password,   setPassword]  = useState("");
-  const [confirmPw,  setConfirmPw] = useState("");
-  // Family setup form
-  const [famMode,    setFamMode]   = useState("create"); // create | join
-  const [famName,    setFamName]   = useState("");
-  const [famPw,      setFamPw]     = useState("");
-  const [famId,      setFamId]     = useState("");
-  // Held across steps
-  const [authToken,  setAuthToken] = useState(null);
-  const [authUser,   setAuthUser]  = useState(null);
-  const [savedName,  setSavedName] = useState("");
-  // Forgot password
-  const [fpEmail,    setFpEmail]   = useState("");
-  const [fpOtp,      setFpOtp]     = useState("");
-  const [fpNewPw,    setFpNewPw]   = useState("");
-  const [fpConfirm,  setFpConfirm] = useState("");
-  const [fpToken,    setFpToken]   = useState(null);
-  // Family password reset
-  const [frFamId,    setFrFamId]   = useState("");
-  const [frNewPw,    setFrNewPw]   = useState("");
-  const [frConfirm,  setFrConfirm] = useState("");
+const BG = "linear-gradient(150deg,#FFF8F0,#FFF0CC 60%,#FFF8F0)";
 
-  const BG = "linear-gradient(150deg,#FFF8F0,#FFF0CC 60%,#FFF8F0)";
-  const wrap = (children, title, sub, icon="👨‍👩‍👧‍👦") => (
+function LoginWrap({ children, title, sub, icon }) {
+  return (
     <div style={{ minHeight:"100vh", background:BG, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ width:"100%", maxWidth:430 }}>
         <div style={{ textAlign:"center", marginBottom:26 }}>
-          <div style={{ fontSize: icon.length > 2 ? 48 : 66 }}>{icon}</div>
-          <h1 className="serif" style={{ fontSize:30, color:"#1A1A2E", marginTop:8 }}>{title}</h1>
+          <div style={{ fontSize: icon && icon.length > 2 ? 48 : 66 }}>{icon || "👨‍👩‍👧‍👦"}</div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:30, color:"#1A1A2E", marginTop:8 }}>{title}</h1>
           {sub && <p style={{ color:"#999", fontSize:13, marginTop:5 }}>{sub}</p>}
         </div>
         {children}
@@ -651,8 +699,29 @@ function LoginScreen({ onLogin, showToast }) {
       </div>
     </div>
   );
+}
 
-  // ── STEP: auth ──────────────────────────────────────────────────────────────
+function LoginScreen({ onLogin, showToast }) {
+  const [step,      setStep]     = useState("auth");
+  const [authMode,  setAuthMode] = useState("signin");
+  const [busy,      setBusy]     = useState(false);
+  const [username,  setUsername] = useState("");
+  const [email,     setEmail]    = useState("");
+  const [password,  setPassword] = useState("");
+  const [confirmPw, setConfirmPw]= useState("");
+  const [famMode,   setFamMode]  = useState("create");
+  const [famName,   setFamName]  = useState("");
+  const [famPw,     setFamPw]    = useState("");
+  const [famId,     setFamId]    = useState("");
+  const [authToken, setAuthToken]= useState(null);
+  const [authUser,  setAuthUser] = useState(null);
+  const [savedName, setSavedName]= useState("");
+  const [fpEmail,   setFpEmail]  = useState("");
+  const [fpNewPw,   setFpNewPw]  = useState("");
+  const [fpConfirm, setFpConfirm]= useState("");
+  const [fpToken,   setFpToken]  = useState(null);
+  const [showInvitePopup, setShowInvitePopup] = useState(false);
+
   const handleAuth = async () => {
     if (!email.trim()) { showToast("Email is required","error"); return; }
     if (!password)     { showToast("Password is required","error"); return; }
@@ -660,13 +729,10 @@ function LoginScreen({ onLogin, showToast }) {
     try {
       if (authMode === "signin") {
         const { access_token, user } = await sbSignIn(email.trim().toLowerCase(), password);
-        // First check by auth_id
         let mems = await sbGet("members", `auth_id=eq.${user.id}&select=*`);
-        // Fallback: check by email (covers pre-invited members)
         if (!mems?.length) {
           const byEmail = await sbGet("members", `email=eq.${encodeURIComponent(email.trim().toLowerCase())}&select=*`);
           if (byEmail?.length) {
-            // Link the auth_id now
             await sbPatch("members", `id=eq.${byEmail[0].id}`, { auth_id: user.id });
             mems = [{ ...byEmail[0], auth_id: user.id }];
           }
@@ -678,47 +744,38 @@ function LoginScreen({ onLogin, showToast }) {
           setStep("family");
         }
       } else {
-        // Register
-        if (!username.trim())    { showToast("Username is required","error"); setBusy(false); return; }
-        if (password.length < 6) { showToast("Password must be at least 6 characters","error"); setBusy(false); return; }
+        if (!username.trim())       { showToast("Username is required","error"); setBusy(false); return; }
+        if (password.length < 6)    { showToast("Password must be at least 6 characters","error"); setBusy(false); return; }
         if (password !== confirmPw) { showToast("Passwords do not match","error"); setBusy(false); return; }
         const emailLc = email.trim().toLowerCase();
-        // Check username uniqueness
-        const existing = await sbGet("members", `username=eq.${encodeURIComponent(username.trim())}&select=id`);
-        if (existing?.length) { showToast("Username already taken, please choose another","error"); setBusy(false); return; }
         const { access_token, user } = await sbSignUp(emailLc, password);
         setSavedName(username.trim());
         setAuthToken(access_token); setAuthUser(user);
-        setStep("family");
+        // Check for pre-invite
+        const preInvited = await sbGet("members", `email=eq.${encodeURIComponent(emailLc)}&select=*`);
+        if (preInvited?.length) {
+          const slot = preInvited[0];
+          await sbPatch("members", `id=eq.${slot.id}`, { auth_id: user.id, username: username.trim(), name: username.trim() });
+          const updated = { ...slot, auth_id: user.id, username: username.trim(), name: username.trim() };
+          onLogin(access_token, user, updated, slot.family_id);
+        } else {
+          setStep("family");
+        }
       }
-    } catch(e) { showToast(e.message, "error"); }
+    } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
 
-  // ── STEP: family setup ──────────────────────────────────────────────────────
   const handleFamily = async () => {
     setBusy(true);
     try {
-      const displayName = savedName || username.trim() || "Member";
-      const memberEmail = authUser?.email || email.trim().toLowerCase();
-
-      // ── Check if this email was pre-invited by a Kitchen Head ──────────────
-      // Match by email regardless of auth_id (invite may have created a Supabase user)
-      const preInvited = await sbGet("members", `email=eq.${encodeURIComponent(memberEmail)}&select=*`);
-      if (preInvited?.length) {
-        const slot = preInvited[0];
-        // Link this auth session to the pre-created member slot
-        await sbPatch("members", `id=eq.${slot.id}`, { auth_id: authUser.id, username: displayName, name: displayName });
-        const updated = { ...slot, auth_id: authUser.id, username: displayName, name: displayName };
-        onLogin(authToken, authUser, updated, slot.family_id);
-        return;
-      }
-
+      const displayName  = savedName || username.trim() || "Member";
+      const memberEmail  = authUser?.email || email.trim().toLowerCase();
       if (famMode === "create") {
         if (!famPw) { showToast("Please set a family password","error"); setBusy(false); return; }
         const newFamId = "FAM-" + Math.random().toString(36).substr(2,6).toUpperCase();
         const [fam] = await sbPost("families", [{ id:newFamId, name:famName||`${displayName}'s Family`, password:famPw, head_id:null }]);
-        const [mem] = await sbPost("members", [{ auth_id:authUser.id, family_id:fam.id, name:displayName, username:displayName, email:memberEmail, role:"head" }]);
+        const [mem] = await sbPost("members",  [{ auth_id:authUser.id, family_id:fam.id, name:displayName, username:displayName, email:memberEmail, role:"head" }]);
         await sbPatch("families", `id=eq.${fam.id}`, { head_id:mem.id });
         onLogin(authToken, authUser, mem, fam.id);
       } else {
@@ -732,7 +789,6 @@ function LoginScreen({ onLogin, showToast }) {
     setBusy(false);
   };
 
-  // ── STEP: forgot — send OTP ─────────────────────────────────────────────────
   const handleSendOTP = async () => {
     if (!fpEmail.trim()) { showToast("Please enter your email","error"); return; }
     setBusy(true);
@@ -744,122 +800,53 @@ function LoginScreen({ onLogin, showToast }) {
     setBusy(false);
   };
 
-  // ── STEP: otp — verify OTP ──────────────────────────────────────────────────
-  const handleVerifyOTP = async () => {
-    if (!fpOtp.trim()) { showToast("Please enter the OTP","error"); return; }
-    setBusy(true);
-    try {
-      const { access_token } = await sbVerifyOTP(fpEmail.trim().toLowerCase(), fpOtp.trim());
-      setFpToken(access_token);
-      setStep("newpw");
-    } catch(e) { showToast(e.message,"error"); }
-    setBusy(false);
-  };
-
-  // ── STEP: newpw — set new password ─────────────────────────────────────────
-  const handleNewPassword = async () => {
-    if (fpNewPw.length < 6)     { showToast("Password must be at least 6 characters","error"); return; }
-    if (fpNewPw !== fpConfirm)  { showToast("Passwords do not match","error"); return; }
-    setBusy(true);
-    try {
-      await sbUpdatePassword(fpToken, fpNewPw);
-      showToast("Password updated! Please sign in.","success");
-      setStep("auth"); setFpEmail(""); setFpOtp(""); setFpNewPw(""); setFpConfirm(""); setFpToken(null);
-    } catch(e) { showToast(e.message,"error"); }
-    setBusy(false);
-  };
-
-  // ── STEP: familyreset — reset family password ───────────────────────────────
-  const handleFamilyReset = async () => {
-    if (!frFamId.trim())         { showToast("Enter your Family ID","error"); return; }
-    if (frNewPw.length < 4)      { showToast("Family password too short","error"); return; }
-    if (frNewPw !== frConfirm)   { showToast("Passwords do not match","error"); return; }
-    setBusy(true);
-    try {
-      // Verify this auth user is the head of that family
-      const fams = await sbGet("families", `id=eq.${frFamId.trim().toUpperCase()}&select=*`);
-      if (!fams?.length) { showToast("Family ID not found","error"); setBusy(false); return; }
-      const fam = fams[0];
-      const mems = await sbGet("members", `auth_id=eq.${authUser?.id}&family_id=eq.${fam.id}&select=*`);
-      if (!mems?.length) { showToast("You are not a member of this family","error"); setBusy(false); return; }
-      if (fam.head_id !== mems[0].id) { showToast("Only the Kitchen Head can reset the family password","error"); setBusy(false); return; }
-      await sbPatch("families", `id=eq.${fam.id}`, { password: frNewPw });
-      showToast("Family password updated! Share the new password with your family.","success");
-      setStep("auth"); setFrFamId(""); setFrNewPw(""); setFrConfirm("");
-    } catch(e) { showToast(e.message,"error"); }
-    setBusy(false);
-  };
-
-  // ─────────────────────────────── RENDERS ────────────────────────────────────
-
-  if (step === "forgot") return wrap(
-    <div className="card" style={{ padding:24 }}>
-      <button onClick={()=>setStep("auth")} style={{ background:"none", border:"none", color:"#aaa", cursor:"pointer", fontSize:13, marginBottom:16 }}>← Back to Sign In</button>
-      <h3 className="serif" style={{ fontSize:20, marginBottom:6 }}>Reset Your Password</h3>
-      <p style={{ fontSize:13, color:"#999", marginBottom:18 }}>Enter your registered email. We'll send you a 6-digit OTP.</p>
-      <div style={{ marginBottom:16 }}>
-        <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Registered Email</label>
-        <input className="input" value={fpEmail} onChange={e=>setFpEmail(e.target.value)} placeholder="you@email.com" type="email" autoComplete="email" />
-      </div>
-      <button className="btn btn-p" onClick={handleSendOTP} disabled={busy} style={{ width:"100%", padding:12 }}>
-        {busy ? "Sending…" : "📧 Send Reset Link"}
-      </button>
-
-    </div>,
-    "Forgot Password", "Reset your account password via email OTP", "🔐"
-  );
-
-  if (step === "sent") return wrap(
-    <div className="card" style={{ padding:28, textAlign:"center" }}>
-      <div style={{ fontSize:64, marginBottom:16 }}>📬</div>
-      <h3 className="serif" style={{ fontSize:22, color:"#1A1A2E", marginBottom:10 }}>Check your inbox</h3>
-      <p style={{ fontSize:14, color:"#555", lineHeight:1.7, marginBottom:6 }}>
-        We sent a password reset link to
-      </p>
-      <p style={{ fontSize:15, fontWeight:700, color:"#1A1A2E", marginBottom:20 }}>{fpEmail}</p>
-      <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:16, marginBottom:24, textAlign:"left" }}>
-        <div style={{ fontWeight:700, fontSize:13, color:"#2D6A4F", marginBottom:8 }}>What to do next:</div>
-        <div style={{ fontSize:13, color:"#555", lineHeight:1.8 }}>
-          1. Open the email from Supabase<br/>
-          2. Click the <b>"Reset Password"</b> link<br/>
-          3. You'll be brought back here to set your new password
+  // ── FORGOT ────────────────────────────────────────────────────────────────
+  if (step === "forgot") return (
+    <LoginWrap title="Forgot Password" sub="Reset your password via email" icon="🔐">
+      <div className="card" style={{ padding:24 }}>
+        <button onClick={()=>setStep("auth")} style={{ background:"none", border:"none", color:"#aaa", cursor:"pointer", fontSize:13, marginBottom:16 }}>← Back to Sign In</button>
+        <p style={{ fontSize:13, color:"#999", marginBottom:18 }}>Enter your registered email. We will send you a reset link.</p>
+        <div style={{ marginBottom:16 }}>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Registered Email</label>
+          <input className="input" value={fpEmail} onChange={e=>setFpEmail(e.target.value)} placeholder="you@email.com" type="email" autoComplete="email" />
         </div>
+        <button className="btn btn-p" onClick={handleSendOTP} disabled={busy} style={{ width:"100%", padding:12 }}>
+          {busy ? "Sending..." : "📧 Send Reset Link"}
+        </button>
       </div>
-      <div style={{ textAlign:"center" }}>
-        <span style={{ fontSize:13, color:"#aaa" }}>Didn't receive it? </span>
+    </LoginWrap>
+  );
+
+  // ── SENT ──────────────────────────────────────────────────────────────────
+  if (step === "sent") return (
+    <LoginWrap title="Reset Link Sent" icon="📧">
+      <div className="card" style={{ padding:28, textAlign:"center" }}>
+        <div style={{ fontSize:64, marginBottom:16 }}>📬</div>
+        <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1A1A2E", marginBottom:10 }}>Check your inbox</h3>
+        <p style={{ fontSize:14, color:"#555", lineHeight:1.7, marginBottom:6 }}>We sent a password reset link to</p>
+        <p style={{ fontSize:15, fontWeight:700, color:"#1A1A2E", marginBottom:20 }}>{fpEmail}</p>
+        <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:16, marginBottom:24, textAlign:"left" }}>
+          <div style={{ fontWeight:700, fontSize:13, color:"#2D6A4F", marginBottom:8 }}>What to do next:</div>
+          <div style={{ fontSize:13, color:"#555", lineHeight:1.8 }}>
+            1. Open the email from Supabase<br/>
+            2. Click the <b>Reset Password</b> link<br/>
+            3. You will be brought back here to set your new password
+          </div>
+        </div>
+        <span style={{ fontSize:13, color:"#aaa" }}>Did not receive it? </span>
         <span style={{ fontSize:13, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setBusy(false); handleSendOTP(); }}>Resend link</span>
+        <button onClick={()=>setStep("forgot")} style={{ display:"block", margin:"12px auto 0", background:"none", border:"none", color:"#bbb", fontSize:12, cursor:"pointer" }}>← Change email</button>
       </div>
-      <button onClick={()=>setStep("forgot")} style={{ display:"block", margin:"16px auto 0", background:"none", border:"none", color:"#bbb", fontSize:12, cursor:"pointer" }}>← Change email</button>
-    </div>,
-    "Reset Link Sent", null, "📧"
+    </LoginWrap>
   );
 
-  if (step === "newpw") return wrap(
-    <div className="card" style={{ padding:24 }}>
-      <h3 className="serif" style={{ fontSize:20, marginBottom:16 }}>Set New Password</h3>
-      <div style={{ marginBottom:14 }}>
-        <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>New Password</label>
-        <PwInput value={fpNewPw} onChange={e=>setFpNewPw(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
-      </div>
-      <div style={{ marginBottom:18 }}>
-        <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Confirm New Password</label>
-        <PwInput value={fpConfirm} onChange={e=>setFpConfirm(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" />
-      </div>
-      <button className="btn btn-p" onClick={handleNewPassword} disabled={busy} style={{ width:"100%", padding:12 }}>
-        {busy ? "Saving…" : "✅ Update Password"}
-      </button>
-    </div>,
-    "New Password", "Choose a strong password", "🔒"
-  );
-
-
-
+  // ── FAMILY SETUP ──────────────────────────────────────────────────────────
   if (step === "family") return (
     <div style={{ minHeight:"100vh", background:BG, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ width:"100%", maxWidth:430 }}>
         <div style={{ textAlign:"center", marginBottom:24 }}>
           <div style={{ fontSize:52 }}>🏠</div>
-          <h2 className="serif" style={{ fontSize:26, color:"#1A1A2E", marginTop:8 }}>Set Up Your Family</h2>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, color:"#1A1A2E", marginTop:8 }}>Set Up Your Family</h2>
           <p style={{ color:"#999", fontSize:13, marginTop:5 }}>Hi {savedName||username||"there"}! Create a new group or join your family.</p>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:18 }}>
@@ -879,10 +866,10 @@ function LoginScreen({ onLogin, showToast }) {
                 <input className="input" value={famName} onChange={e=>setFamName(e.target.value)} placeholder={`${savedName||"Our"}'s Family`} />
               </div>
               <div style={{ marginBottom:6 }}>
-                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Family Password <span style={{ color:"#aaa", fontWeight:400 }}>(share with members to join)</span></label>
+                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Family Password <span style={{ color:"#aaa", fontWeight:400 }}>(share with members)</span></label>
                 <PwInput value={famPw} onChange={e=>setFamPw(e.target.value)} placeholder="e.g. sharma123" autoComplete="new-password" />
               </div>
-              <p style={{ fontSize:11, color:"#aaa", marginBottom:16, marginTop:6 }}>You'll be set as the Kitchen Head. Your Family ID is auto-generated.</p>
+              <p style={{ fontSize:11, color:"#aaa", marginBottom:16, marginTop:6 }}>You will be set as the Kitchen Head. Your Family ID is auto-generated.</p>
             </>
           ) : (
             <>
@@ -897,7 +884,7 @@ function LoginScreen({ onLogin, showToast }) {
             </>
           )}
           <button className="btn btn-p" onClick={handleFamily} disabled={busy} style={{ width:"100%", padding:13, fontSize:15 }}>
-            {busy ? "Please wait…" : famMode==="create" ? "🏠 Create My Family →" : "🔗 Join Family →"}
+            {busy ? "Please wait..." : famMode==="create" ? "Create My Family" : "Join Family"}
           </button>
         </div>
         <button onClick={()=>setStep("auth")} style={{ display:"block", margin:"14px auto 0", background:"none", border:"none", color:"#aaa", fontSize:12, cursor:"pointer" }}>← Back to Sign In</button>
@@ -905,51 +892,57 @@ function LoginScreen({ onLogin, showToast }) {
     </div>
   );
 
-  // ── STEP: auth (Sign In / Register) ────────────────────────────────────────
-  return wrap(
-    <div className="card" style={{ padding:26 }}>
-      {/* Toggle */}
-      <div style={{ display:"flex", background:"#f5f0e8", borderRadius:10, padding:4, marginBottom:22, gap:2 }}>
-        {[["signin","Sign In"],["register","Register"]].map(([m,l])=>(
-          <button key={m} onClick={()=>{ setAuthMode(m); setPassword(""); setConfirmPw(""); }} style={{ flex:1, padding:"9px 4px", borderRadius:8, border:"none", background:authMode===m?"#fff":"transparent", fontWeight:authMode===m?700:400, fontSize:13, cursor:"pointer", color:authMode===m?"#1A1A2E":"#999", boxShadow:authMode===m?"0 1px 5px rgba(0,0,0,.08)":"none", transition:"all .18s" }}>{l}</button>
-        ))}
-      </div>
+  // ── AUTH (Sign In / Register) ─────────────────────────────────────────────
+  return (
+    <LoginWrap title="Family Kitchen" sub="Plan meals together, eat happily">
+      <InvitePopup show={showInvitePopup} onClose={()=>setShowInvitePopup(false)} showToast={showToast} />
+      <div className="card" style={{ padding:26 }}>
+        {/* Tabs */}
+        <div style={{ display:"flex", background:"#f5f0e8", borderRadius:10, padding:4, marginBottom:22, gap:2 }}>
+          {[["signin","Sign In"],["register","Register"]].map(([m,l])=>(
+            <button key={m} onClick={()=>{ setAuthMode(m); setPassword(""); setConfirmPw(""); }} style={{ flex:1, padding:"9px 4px", borderRadius:8, border:"none", background:authMode===m?"#fff":"transparent", fontWeight:authMode===m?700:400, fontSize:13, cursor:"pointer", color:authMode===m?"#1A1A2E":"#999", boxShadow:authMode===m?"0 1px 5px rgba(0,0,0,.08)":"none", transition:"all .18s" }}>{l}</button>
+          ))}
+        </div>
 
-      {authMode === "register" && (
+        {authMode === "register" && (
+          <div style={{ marginBottom:14 }}>
+            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Username <span style={{ color:"#aaa", fontWeight:400 }}>(visible to family members)</span></label>
+            <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="e.g. Amit" autoComplete="username" />
+          </div>
+        )}
         <div style={{ marginBottom:14 }}>
-          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Username <span style={{ color:"#aaa", fontWeight:400 }}>(visible to family members)</span></label>
-          <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="e.g. Amit" autoComplete="username" />
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Email Address</label>
+          <input className="input" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@gmail.com" type="email" autoComplete="email" />
         </div>
-      )}
-      <div style={{ marginBottom:14 }}>
-        <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Email Address</label>
-        <input className="input" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@gmail.com" type="email" autoComplete="email" />
+        <div style={{ marginBottom: authMode==="register" ? 14 : 6 }}>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Password</label>
+          <PwInput value={password} onChange={e=>setPassword(e.target.value)} placeholder={authMode==="register"?"Min. 6 characters":"Your password"} autoComplete={authMode==="register"?"new-password":"current-password"} />
+        </div>
+        {authMode === "register" && (
+          <div style={{ marginBottom:6 }}>
+            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Confirm Password</label>
+            <PwInput value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" />
+          </div>
+        )}
+        {authMode === "signin" && (
+          <div style={{ textAlign:"right", marginBottom:16 }}>
+            <span style={{ fontSize:12, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setFpEmail(email); setStep("forgot"); }}>Forgot password?</span>
+          </div>
+        )}
+
+        <button className="btn btn-p" onClick={handleAuth} disabled={busy} style={{ width:"100%", padding:13, fontSize:15, marginTop: authMode==="register"?14:0 }}>
+          {busy ? "Please wait..." : authMode==="signin" ? "Sign In" : "Create Account"}
+        </button>
+
+        <div style={{ textAlign:"center", marginTop:14, paddingTop:14, borderTop:"1px solid #f5f0e8" }}>
+          <span style={{ fontSize:12, color:"#aaa" }}>Invited by a family member? </span>
+          <span style={{ fontSize:12, color:"#2D6A4F", cursor:"pointer", fontWeight:600 }} onClick={()=>setShowInvitePopup(true)}>Get joining link</span>
+        </div>
       </div>
-      <div style={{ marginBottom: authMode==="register" ? 14 : 6 }}>
-        <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Password</label>
-        <PwInput value={password} onChange={e=>setPassword(e.target.value)} placeholder={authMode==="register"?"Min. 6 characters":"Your password"} autoComplete={authMode==="register"?"new-password":"current-password"} />
-      </div>
-      {authMode === "register" && (
-        <div style={{ marginBottom:6 }}>
-          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Confirm Password</label>
-          <PwInput value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" />
-        </div>
-      )}
-      {authMode === "signin" && (
-        <div style={{ textAlign:"right", marginBottom:16 }}>
-          <span style={{ fontSize:12, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setFpEmail(email); setStep("forgot"); }}>Forgot password?</span>
-        </div>
-      )}
-
-      <button className="btn btn-p" onClick={handleAuth} disabled={busy} style={{ width:"100%", padding:13, fontSize:15, marginTop: authMode==="register"?14:0 }}>
-        {busy ? "Please wait…" : authMode==="signin" ? "Sign In →" : "Create Account →"}
-      </button>
-
-
-    </div>,
-    "Family Kitchen", "Plan meals together, eat happily"
+    </LoginWrap>
   );
 }
+
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function DashboardView({ days, meals, planner, getMealSummary, onDayClick, MICONS, MCOLS, showInstallBanner, onInstall }) {
