@@ -1868,6 +1868,22 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
     catch(e) { /* silent */ }
   };
 
+  const resendInvite = async (m) => {
+    if (!m.email) { showToast("No email address for this member","error"); return; }
+    setBusy(true);
+    try {
+      const res = await fetch(`${SB_URL}/functions/v1/send-invite`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${SB_KEY}`, "apikey":SB_KEY },
+        body: JSON.stringify({ email:m.email, memberName:m.name, familyName:family.name, familyId:family.id, headName:member.name })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      showToast(`Invite resent to ${m.email}! 📧`);
+    } catch(e) { showToast("Failed to resend: " + e.message,"error"); }
+    setBusy(false);
+  };
+
   return (
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
@@ -1913,9 +1929,17 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
                   {!m.auth_id && <span style={{ marginLeft:8, background:"#FFF3CD", color:"#856404", fontSize:10, fontWeight:700, padding:"2px 7px", borderRadius:20 }}>⏳ Invite Pending</span>}
                 </div>
               </div>
-              <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
+              <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0, flexWrap:"wrap", justifyContent:"flex-end" }}>
                 {isThisHead && <span className="badge" style={{ background:"#fff8e1", color:"#a87800" }}>★ Head</span>}
                 {!isThisHead && isHead && <button className="btn btn-g btn-sm" onClick={()=>setHead(m)} style={{ fontSize:11 }}>Make Head</button>}
+                {!m.auth_id && isHead && (
+                  <button
+                    onClick={()=>resendInvite(m)}
+                    disabled={busy}
+                    style={{ background:"#fff8e1", color:"#a87800", border:"1px solid #f0cc60", padding:"4px 10px", borderRadius:8, fontSize:11, cursor:"pointer", fontWeight:600 }}>
+                    📧 Resend
+                  </button>
+                )}
                 {m.id!==member.id && isHead && <button className="btn btn-danger btn-sm" onClick={()=>removeMember(m)}>Remove</button>}
               </div>
             </div>
