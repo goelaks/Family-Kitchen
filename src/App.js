@@ -523,8 +523,9 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.msg||d.error_description||"Failed to update password");
       setDone(true);
-      showToast("Password updated successfully! Please sign in.","success");
-      setTimeout(() => onDone(), 2500);
+      showToast("Password updated! Signing you in…","success");
+      // Try to sign in automatically after reset
+      setTimeout(() => onDone(), 2000);
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
@@ -659,7 +660,17 @@ function LoginScreen({ onLogin, showToast }) {
     try {
       if (authMode === "signin") {
         const { access_token, user } = await sbSignIn(email.trim().toLowerCase(), password);
-        const mems = await sbGet("members", `auth_id=eq.${user.id}&select=*`);
+        // First check by auth_id
+        let mems = await sbGet("members", `auth_id=eq.${user.id}&select=*`);
+        // Fallback: check by email (covers pre-invited members)
+        if (!mems?.length) {
+          const byEmail = await sbGet("members", `email=eq.${encodeURIComponent(email.trim().toLowerCase())}&select=*`);
+          if (byEmail?.length) {
+            // Link the auth_id now
+            await sbPatch("members", `id=eq.${byEmail[0].id}`, { auth_id: user.id });
+            mems = [{ ...byEmail[0], auth_id: user.id }];
+          }
+        }
         if (mems?.length) {
           onLogin(access_token, user, mems[0], mems[0].family_id);
         } else {
@@ -692,12 +703,13 @@ function LoginScreen({ onLogin, showToast }) {
       const memberEmail = authUser?.email || email.trim().toLowerCase();
 
       // ── Check if this email was pre-invited by a Kitchen Head ──────────────
-      const preInvited = await sbGet("members", `email=eq.${encodeURIComponent(memberEmail)}&auth_id=is.null&select=*`);
+      // Match by email regardless of auth_id (invite may have created a Supabase user)
+      const preInvited = await sbGet("members", `email=eq.${encodeURIComponent(memberEmail)}&select=*`);
       if (preInvited?.length) {
-        // Claim the pre-created slot — just link auth_id, keep existing name/family
         const slot = preInvited[0];
-        await sbPatch("members", `id=eq.${slot.id}`, { auth_id: authUser.id, username: displayName });
-        const updated = { ...slot, auth_id: authUser.id, username: displayName };
+        // Link this auth session to the pre-created member slot
+        await sbPatch("members", `id=eq.${slot.id}`, { auth_id: authUser.id, username: displayName, name: displayName });
+        const updated = { ...slot, auth_id: authUser.id, username: displayName, name: displayName };
         onLogin(authToken, authUser, updated, slot.family_id);
         return;
       }
@@ -1868,17 +1880,7 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
       const [saved] = await sbPost("members",[{ family_id:family.id, name:newM.name, username:newM.name, email:em, role:"member", auth_id:null }]);
       setMembers(p=>[...p,saved]);
       setNewM({ name:"", email:"" }); setAdding(false);
-      // Send invitation email via Edge Function
-      try {
-        await fetch(`${SB_URL}/functions/v1/send-invite`, {
-          method:"POST",
-          headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${SB_KEY}`, "apikey":SB_KEY },
-          body: JSON.stringify({ email:em, memberName:newM.name, familyName:family.name, familyId:family.id, headName:member.name })
-        });
-        showToast(`Invitation email sent to ${em}! 📧`);
-      } catch(e) {
-        showToast(`Member added but email failed. Share this link manually: https://family-kitchen-gamma-rust.vercel.app`,"info");
-      }
+      showToast(`${newM.name} added! Share the invite link below with them. 📋`);
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
@@ -1922,20 +1924,26 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
     catch(e) { /* silent */ }
   };
 
-  const resendInvite = async (m) => {
+  const resendInvite = (m) => {
     if (!m.email) { showToast("No email address for this member","error"); return; }
-    setBusy(true);
-    try {
-      const res = await fetch(`${SB_URL}/functions/v1/send-invite`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${SB_KEY}`, "apikey":SB_KEY },
-        body: JSON.stringify({ email:m.email, memberName:m.name, familyName:family.name, familyId:family.id, headName:member.name })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      showToast(`Invite resent to ${m.email}! 📧`);
-    } catch(e) { showToast("Failed to resend: " + e.message,"error"); }
-    setBusy(false);
+    // Copy invite link to clipboard
+    const link = `https://family-kitchen-gamma-rust.vercel.app`;
+    const msg  = `Hi ${m.name}! You've been invited to join our Family Kitchen meal planner.
+
+1. Open this link: ${link}
+2. Click Register
+3. Use this email to register: ${m.email}
+4. You'll automatically join our family group!
+
+Family ID (if needed): ${family.id}`;
+    if (navigator.share) {
+      navigator.share({ title:"Family Kitchen Invite", text:msg })
+        .catch(()=>{ navigator.clipboard?.writeText(msg); showToast("Invite message copied! Send it to " + m.name,"info"); });
+    } else {
+      navigator.clipboard?.writeText(msg)
+        .then(()=>showToast("Invite message copied to clipboard! Paste it in WhatsApp 📋","info"))
+        .catch(()=>showToast("Invite link: " + link,"info"));
+    }
   };
 
   return (
@@ -1971,6 +1979,19 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
         </div>
       )}
 
+      {/* Invite instructions — shown when there are pending members */}
+      {members.some(m=>!m.auth_id) && isHead && (
+        <div className="card" style={{ marginBottom:4, background:"#f0fdf4", border:"1px solid #bbf7d0" }}>
+          <div style={{ fontWeight:700, fontSize:13, color:"#2D6A4F", marginBottom:6 }}>📋 How pending members join:</div>
+          <div style={{ fontSize:12, color:"#555", lineHeight:1.8 }}>
+            1. Tap <b>📤 Share Invite</b> on their card below<br/>
+            2. Send them the message via WhatsApp or any chat app<br/>
+            3. They open the app link → tap <b>Register</b><br/>
+            4. They register using the <b>same email</b> you added → auto-joined! ✅
+          </div>
+        </div>
+      )}
+
       <div style={{ display:"grid", gap:12 }}>
         {members.map((m,i)=>{
           const isThisHead = m.id===family?.head_id;
@@ -1989,9 +2010,8 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
                 {!m.auth_id && isHead && (
                   <button
                     onClick={()=>resendInvite(m)}
-                    disabled={busy}
-                    style={{ background:"#fff8e1", color:"#a87800", border:"1px solid #f0cc60", padding:"4px 10px", borderRadius:8, fontSize:11, cursor:"pointer", fontWeight:600 }}>
-                    📧 Resend
+                    style={{ background:"#e8f5e9", color:"#2D6A4F", border:"1px solid #c8e6c9", padding:"4px 10px", borderRadius:8, fontSize:11, cursor:"pointer", fontWeight:600 }}>
+                    📤 Share Invite
                   </button>
                 )}
                 {m.id!==member.id && isHead && <button className="btn btn-danger btn-sm" onClick={()=>removeMember(m)}>Remove</button>}
