@@ -192,6 +192,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [dbReady, setDbReady] = useState(false);
   const [recoveryToken,   setRecoveryToken]   = useState(null); // for password reset
+  const [autoInvite,      setAutoInvite]       = useState(false); // auto-open invite popup
   const [installPrompt,   setInstallPrompt]   = useState(null); // PWA install prompt
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
@@ -206,6 +207,16 @@ export default function App() {
       window.history.replaceState(null, "", window.location.pathname);
       setRecoveryToken(accessToken);
       setScreen("resetpw");
+    }
+  }, []);
+
+  // ── Auto-open invite popup if URL has ?invite=true ────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("invite") === "true") {
+      window.history.replaceState(null, "", window.location.pathname);
+      // We're on the login screen — signal LoginScreen to open invite popup
+      setAutoInvite(true);
     }
   }, []);
 
@@ -404,7 +415,7 @@ export default function App() {
   if (screen==="login") return (
     <>
       <style>{CSS}</style>
-      <LoginScreen onLogin={async (token, sbUser, mem, fid) => {
+      <LoginScreen autoInvite={autoInvite} onAutoInviteDone={()=>setAutoInvite(false)} onLogin={async (token, sbUser, mem, fid) => {
         setAuthToken(token); setAuthUser(sbUser); setMember(mem);
         await loadAll(fid);
         setScreen("app");
@@ -701,7 +712,7 @@ function LoginWrap({ children, title, sub, icon }) {
   );
 }
 
-function LoginScreen({ onLogin, showToast }) {
+function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone }) {
   const [step,      setStep]     = useState("auth");
   const [authMode,  setAuthMode] = useState("signin");
   const [busy,      setBusy]     = useState(false);
@@ -721,6 +732,11 @@ function LoginScreen({ onLogin, showToast }) {
   const [fpConfirm, setFpConfirm]= useState("");
   const [fpToken,   setFpToken]  = useState(null);
   const [showInvitePopup, setShowInvitePopup] = useState(false);
+
+  // Auto-open popup if directed from invite link
+  React.useEffect(() => {
+    if (autoInvite) { setShowInvitePopup(true); if(onAutoInviteDone) onAutoInviteDone(); }
+  }, [autoInvite]); // eslint-disable-line
 
   const handleAuth = async () => {
     if (!email.trim()) { showToast("Email is required","error"); return; }
@@ -1961,12 +1977,33 @@ Family ID (if needed): ${family.id}`;
         <div className="card" style={{ marginBottom:16, border:"1px solid #F4A200", background:"#fffdf7" }}>
           <h3 style={{ fontSize:15, fontWeight:600, marginBottom:4 }}>Invite Family Member</h3>
           <p style={{ fontSize:12, color:"#888", marginBottom:12 }}>Enter their name and email. They register with that email in the app and auto-join your family — no Family ID or password needed.</p>
+          {/* Contact Picker — shown only if browser supports it (Android Chrome, iOS Safari 16+) */}
+          {"contacts" in navigator && "ContactsManager" in window && (
+            <div style={{ marginBottom:14 }}>
+              <button
+                className="btn btn-g"
+                style={{ width:"100%", fontSize:13, padding:"10px", borderStyle:"dashed", borderColor:"#2D6A4F", color:"#2D6A4F", fontWeight:600 }}
+                onClick={async () => {
+                  try {
+                    const contacts = await navigator.contacts.select(["name","email"], { multiple:false });
+                    if (!contacts?.length) return;
+                    const c  = contacts[0];
+                    const nm = Array.isArray(c.name)  ? c.name[0]  : (c.name  || "");
+                    const em = Array.isArray(c.email) ? c.email[0] : (c.email || "");
+                    setNewM({ name:nm, email:em });
+                  } catch(e) { showToast("Contact picker closed","info"); }
+                }}>
+                📱 Pick from Phone Contacts
+              </button>
+              <p style={{ fontSize:11, color:"#aaa", textAlign:"center", marginTop:5 }}>Or enter manually below</p>
+            </div>
+          )}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }} className="grid-2">
             <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Name</label><input className="input" value={newM.name} onChange={e=>setNewM(p=>({...p,name:e.target.value}))} placeholder="Member name" /></div>
             <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Email Address</label><input className="input" value={newM.email} onChange={e=>setNewM(p=>({...p,email:e.target.value}))} placeholder="member@email.com" type="email" /></div>
           </div>
           <div style={{ display:"flex", gap:8, marginTop:12 }}>
-            <button className="btn btn-p" onClick={addMember} disabled={busy}>{busy?"Sending…":"📧 Send Invite"}</button>
+            <button className="btn btn-p" onClick={addMember} disabled={busy}>{busy?"Sending...":"📧 Send Invite"}</button>
             <button className="btn btn-g" onClick={()=>setAdding(false)}>Cancel</button>
           </div>
         </div>
@@ -1979,8 +2016,8 @@ Family ID (if needed): ${family.id}`;
           <div style={{ fontSize:12, color:"#555", lineHeight:1.8 }}>
             1. Tap <b>📤 Share Invite</b> on their card below<br/>
             2. Send them the message via WhatsApp or any chat app<br/>
-            3. They open the app link → tap <b>Register</b><br/>
-            4. They register using the <b>same email</b> you added → auto-joined! ✅
+            3. They tap the link → popup opens automatically with their email pre-prompted<br/>
+            4. They enter their email → receive joining link → set password → auto-joined! ✅
           </div>
         </div>
       )}
