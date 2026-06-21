@@ -1827,7 +1827,17 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
       const [saved] = await sbPost("members",[{ family_id:family.id, name:newM.name, username:newM.name, email:em, role:"member", auth_id:null }]);
       setMembers(p=>[...p,saved]);
       setNewM({ name:"", email:"" }); setAdding(false);
-      showToast(`Invite sent! ${newM.name} can now register with ${em} to join. 📧`);
+      // Send invitation email via Edge Function
+      try {
+        await fetch(`${SB_URL}/functions/v1/send-invite`, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${SB_KEY}`, "apikey":SB_KEY },
+          body: JSON.stringify({ email:em, memberName:newM.name, familyName:family.name, familyId:family.id, headName:member.name })
+        });
+        showToast(`Invitation email sent to ${em}! 📧`);
+      } catch(e) {
+        showToast(`Member added but email failed. Share this link manually: https://family-kitchen-gamma-rust.vercel.app`,"info");
+      }
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
