@@ -186,8 +186,9 @@ export default function App() {
   const [favs,    setFavs]    = useState({});        // { food_id: true }
   const [usageCnt,setUsageCnt]= useState({});        // { food_name: count }
   const [view,    setView]    = useState("dashboard");
-  const [selDay,  setSelDay]  = useState(null);
-  const [selMeal, setSelMeal] = useState(null);
+  const [selDay,      setSelDay]      = useState(null);
+  const [selMeal,     setSelMeal]     = useState(null);
+  const [selMealView, setSelMealView] = useState(null); // meal-across-week view
   const [toast,   setToast]   = useState(null);
   const [loading, setLoading] = useState(false);
   const [dbReady, setDbReady] = useState(false);
@@ -316,6 +317,29 @@ export default function App() {
     } catch(e) { showToast(e.message,"error"); }
     setLoading(false);
   }, [showToast]);
+
+  // ── Handle phone back button — navigate within app instead of closing ──────────
+  useEffect(() => {
+    if (screen !== "app") return;
+
+    const handleBack = (e) => {
+      // Meal detail → Day view
+      if (selMeal) { setSelMeal(null); window.history.pushState(null, "", window.location.pathname); return; }
+      // Day view → Dashboard
+      if (selDay)  { setSelDay(null);  window.history.pushState(null, "", window.location.pathname); return; }
+      // Meal week view → Dashboard
+      if (selMealView) { setSelMealView(null); window.history.pushState(null, "", window.location.pathname); return; }
+      // Sub-views → Dashboard
+      if (view !== "dashboard") { setView("dashboard"); setSelDay(null); setSelMeal(null); setSelMealView(null); window.history.pushState(null, "", window.location.pathname); return; }
+      // Already on dashboard — let browser handle (minimise app)
+    };
+
+    window.addEventListener("popstate", handleBack);
+    // Push a state so there's always something to pop back to
+    window.history.pushState(null, "", window.location.pathname);
+
+    return () => window.removeEventListener("popstate", handleBack);
+  }, [screen, view, selDay, selMeal]);
 
   // Register push notifications after login
   const initPush = useCallback(async (memberId) => {
@@ -473,12 +497,12 @@ export default function App() {
           {/* SIDEBAR */}
           <aside className="sidebar" style={{ width:185, background:"#fff", borderRight:"1px solid #ede5d8", padding:"14px 10px", display:"flex", flexDirection:"column", gap:3, position:"sticky", top:60, height:"calc(100vh - 60px)", overflowY:"auto" }}>
             {[["dashboard","📅","Dashboard"],["foods","🍱","Food Database"],["shopping","🛒","Shopping"],["family","👥","Family"]].map(([v,ic,lb])=>(
-              <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>{ setView(v); setSelDay(null); setSelMeal(null); }}>{ic} {lb}</button>
+              <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>{ setView(v); setSelDay(null); setSelMeal(null); window.history.pushState(null,"",window.location.pathname); }}>{ic} {lb}</button>
             ))}
             {isHead && (
               <>
                 <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
-                <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); }}>✅ Finalize Menu</button>
+                <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); window.history.pushState(null,"",window.location.pathname); }}>✅ Finalize Menu</button>
               </>
             )}
             <div style={{ flex:1 }} />
@@ -490,8 +514,9 @@ export default function App() {
 
           {/* MAIN */}
           <main className="main-pad" style={{ flex:1, padding:"22px 24px", overflowY:"auto", paddingBottom:120 }}>
-            {view==="dashboard" && !selDay && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={setSelDay} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} />}
-            {view==="dashboard" && selDay && !selMeal && <DayView day={selDay} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onBack={()=>setSelDay(null)} onMealClick={setSelMeal} MICONS={MICONS} MCOLS={MCOLS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} member={member} />}
+            {view==="dashboard" && !selDay && !selMealView && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={(d)=>{ setSelDay(d); window.history.pushState(null,"",window.location.pathname); }} onMealViewClick={(m)=>{ setSelMealView(m); window.history.pushState(null,"",window.location.pathname); }} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} />}
+            {view==="dashboard" && selMealView && !selDay && <MealWeekView meal={selMealView} days={DAYS} planner={planner} foods={foods} member={member} onBack={()=>setSelMealView(null)} onAdd={addToPlanner} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} onDayClick={(d)=>{ setSelMealView(null); setSelDay(d); setSelMeal(selMealView); window.history.pushState(null,"",window.location.pathname); }} />}
+            {view==="dashboard" && selDay && !selMeal && <DayView day={selDay} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onBack={()=>{ setSelDay(null); }} onMealClick={(m)=>{ setSelMeal(m); window.history.pushState(null,"",window.location.pathname); }} MICONS={MICONS} MCOLS={MCOLS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} member={member} />}
             {view==="dashboard" && selDay && selMeal && <MealView day={selDay} meal={selMeal} foods={foods} member={member} onBack={()=>setSelMeal(null)} onAdd={addToPlanner} getMealSummary={getMealSummary} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="foods"     && <FoodsView foods={foods} setFoods={setFoods} showToast={showToast} MEALS={MEALS} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="shopping"  && <ShoppingView genList={generateShoppingList} planner={planner} SAPPS={SAPPS} showToast={showToast} isHead={isHead} />}
@@ -503,7 +528,7 @@ export default function App() {
         {/* BOTTOM NAV (mobile) */}
         <nav className="bnav" style={{ display:"none", position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ede5d8", padding:"6px 8px", justifyContent:"space-around", zIndex:100 }}>
           {[["dashboard","📅","Home"],["foods","🍱","Foods"],["shopping","🛒","Shop"],["family","👥","Family"],...(isHead?[["finalize","✅","Finalize"]]:[])].map(([v,ic,lb])=>(
-            <button key={v} onClick={()=>{ setView(v); setSelDay(null); setSelMeal(null); }} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
+            <button key={v} onClick={()=>{ setView(v); setSelDay(null); setSelMeal(null); window.history.pushState(null,"",window.location.pathname); }} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
               <span style={{ fontSize:18 }}>{ic}</span>
               <span style={{ fontSize:10, color:view===v?"#F4A200":"#999", fontWeight:500 }}>{lb}</span>
             </button>
@@ -976,8 +1001,106 @@ function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone }) {
 }
 
 
+// ─── MEAL WEEK VIEW — shows one meal across all 7 days ───────────────────────
+function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDayMealItems, MICONS, isHead, onToggle, onRemove, favs, toggleFav, usageCnt, onDayClick }) {
+  const [expandedDay, setExpandedDay] = useState(null);
+  const mealFoods = foods.filter(f => (Array.isArray(f.categories)?f.categories:[f.category].filter(Boolean)).includes(meal));
+  const sortedFoods = [...mealFoods].sort((a,b) => {
+    const af=favs[a.id]?1:0, bf=favs[b.id]?1:0;
+    if (bf!==af) return bf-af;
+    const au=usageCnt[a.name]||0, bu=usageCnt[b.name]||0;
+    if (bu!==au) return bu-au;
+    return a.name.localeCompare(b.name);
+  });
+
+  const [search, setSearch] = useState("");
+  const filtered = search ? sortedFoods.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())) : sortedFoods;
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:18 }}>
+        <button className="btn btn-g btn-sm" onClick={onBack}>← Dashboard</button>
+        <div>
+          <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>{MICONS[meal]} {meal} — All Week</h2>
+          <p style={{ fontSize:12, color:"#999", marginTop:2 }}>View and add {meal.toLowerCase()} for each day</p>
+        </div>
+      </div>
+
+      {/* Week grid — one card per day */}
+      <div style={{ display:"grid", gap:10, marginBottom:22 }}>
+        {days.map(day => {
+          const items = getDayMealItems(day, meal);
+          const isToday = day === new Date().toLocaleDateString("en",{weekday:"long"});
+          const isOpen  = expandedDay === day;
+          return (
+            <div key={day} className="card" style={{ border: isToday?"2px solid #F4A200":"1px solid #ede5d8" }}>
+              {/* Day header — click to expand food picker */}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer" }} onClick={()=>setExpandedDay(isOpen?null:day)}>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  {isToday && <span style={{ background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20 }}>TODAY</span>}
+                  <span className="serif" style={{ fontSize:16, fontWeight:700, color:"#1A1A2E" }}>{day}</span>
+                  {items.length>0 && <span style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20 }}>{items.length} selected</span>}
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  {items.length===0 && <span style={{ fontSize:12, color:"#ccc" }}>+ Add</span>}
+                  <span style={{ color:"#F4A200", fontSize:18, transform:isOpen?"rotate(90deg)":"none", transition:"transform .2s" }}>›</span>
+                </div>
+              </div>
+
+              {/* Current selections for this day */}
+              {items.length>0 && (
+                <div style={{ marginTop:10, display:"flex", flexWrap:"wrap", gap:6 }}>
+                  {items.map(item=>(
+                    <div key={item.id} style={{ display:"flex", alignItems:"center", gap:5, background:item.finalized?"#e8f5e9":"#f5f5f5", border:`1px solid ${item.finalized?"#c8e6c9":"#eee"}`, borderRadius:20, padding:"4px 10px", fontSize:12 }}>
+                      <span>{item.food_emoji} {item.food_name}</span>
+                      <span style={{ color:"#aaa", fontSize:10 }}>— {item.member_name}</span>
+                      {(isHead || item.member_name===member?.name) && (
+                        <button onClick={e=>{e.stopPropagation();onRemove(item.id);}} style={{ background:"none", border:"none", cursor:"pointer", color:"#ffaaaa", fontSize:14, padding:"0 2px", lineHeight:1 }}>×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Expandable food picker */}
+              {isOpen && (
+                <div style={{ marginTop:14, borderTop:"1px solid #f0e8d8", paddingTop:14 }}>
+                  <div style={{ position:"relative", marginBottom:12 }}>
+                    <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", color:"#bbb" }}>🔍</span>
+                    <input className="input" value={search} onChange={e=>setSearch(e.target.value)} placeholder={`Search ${meal} items...`} style={{ paddingLeft:32, paddingRight:search?32:12 }} />
+                    {search && <button onClick={()=>setSearch("")} style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"#bbb", fontSize:16 }}>×</button>}
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))", gap:8 }}>
+                    {filtered.slice(0,12).map(food=>(
+                      <div key={food.id||food.name} className="food-card" style={{ padding:10, position:"relative" }}>
+                        <button onClick={e=>{e.stopPropagation();toggleFav(food.id);}} style={{ position:"absolute", top:5, right:5, background:"none", border:"none", cursor:"pointer", fontSize:13 }}>
+                          {favs[food.id]?"❤️":"🤍"}
+                        </button>
+                        <div style={{ fontSize:32, textAlign:"center", marginBottom:5 }}>{food.emoji}</div>
+                        <div style={{ fontWeight:600, fontSize:12, textAlign:"center", marginBottom:2 }}>{food.name}</div>
+                        <div style={{ fontSize:10, color:"#aaa", textAlign:"center", marginBottom:7 }}>{food.calories} kcal</div>
+                        <button className="btn btn-p btn-sm" style={{ width:"100%", fontSize:11, padding:"5px" }} onClick={()=>{ onAdd(day, meal, food); }}>+ Add</button>
+                      </div>
+                    ))}
+                    {filtered.length===0 && <div style={{ gridColumn:"1/-1", textAlign:"center", color:"#ccc", padding:20, fontSize:13 }}>No results for "{search}"</div>}
+                  </div>
+                  {filtered.length>12 && (
+                    <div style={{ textAlign:"center", marginTop:10 }}>
+                      <button className="btn btn-g btn-sm" onClick={()=>onDayClick(day)}>See all {filtered.length} items →</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function DashboardView({ days, meals, planner, getMealSummary, onDayClick, MICONS, MCOLS, showInstallBanner, onInstall }) {
+function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMealViewClick, MICONS, MCOLS, showInstallBanner, onInstall }) {
   const today = new Date().toLocaleDateString("en",{weekday:"long"});
   const totalWeek = planner.length;
   const finalizedCount = planner.filter(p=>p.finalized).length;
@@ -1001,14 +1124,15 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, MICON
           </div>
         </div>
       )}
-      {/* week summary strip */}
+      {/* week summary strip — clickable to show meal-across-week view */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:22 }} className="grid-2">
         {meals.map(m=>{
           const c = planner.filter(p=>p.meal===m).length;
-          return <div key={m} style={{ background:"#fff", borderRadius:12, padding:"10px 12px", border:"1px solid #ede5d8", textAlign:"center" }}>
+          return <div key={m} className="card-hover" onClick={()=>onMealViewClick(m)} style={{ background:"#fff", borderRadius:12, padding:"10px 12px", border:"1px solid #ede5d8", textAlign:"center", cursor:"pointer" }}>
             <div style={{ fontSize:22 }}>{MICONS[m]}</div>
             <div style={{ fontSize:20, fontWeight:700, color:"#1A1A2E", marginTop:4 }}>{c}</div>
             <div style={{ fontSize:11, color:"#999" }}>{m.replace(" Snack","")}</div>
+            <div style={{ fontSize:10, color:"#F4A200", marginTop:4, fontWeight:600 }}>View all →</div>
           </div>;
         })}
       </div>
@@ -1620,11 +1744,78 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
 // ─── FINALIZE ─────────────────────────────────────────────────────────────────
 function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, MCOLS }) {
   const approved = planner.filter(p=>p.finalized).length;
+
+  const printMenu = () => {
+    const finalItems = planner.filter(p=>p.finalized);
+
+    // Build table rows — one per day
+    const rows = days.map(day => {
+      const cols = meals.map(meal => {
+        const items = finalItems.filter(p=>p.day===day && p.meal===meal);
+        if (!items.length) return `<td style="color:#bbb;font-style:italic;padding:10px 12px;border:1px solid #e0e0e0;vertical-align:top;">—</td>`;
+        const names = [...new Set(items.map(i=>i.food_name))].join("<br/>");
+        return `<td style="padding:10px 12px;border:1px solid #e0e0e0;vertical-align:top;font-size:13px;">${names}</td>`;
+      }).join("");
+      const isToday = day === new Date().toLocaleDateString("en",{weekday:"long"});
+      return `<tr style="background:${isToday?"#fff8e1":"#fff"};">
+        <td style="padding:10px 12px;border:1px solid #e0e0e0;font-weight:700;font-size:13px;white-space:nowrap;background:${isToday?"#F4A200":"#f5f5f5"};color:${isToday?"#fff":"#333"};">${day}${isToday?" ★":""}</td>
+        ${cols}
+      </tr>`;
+    }).join("");
+
+    const mealHeaders = meals.map(m =>
+      `<th style="padding:10px 12px;border:1px solid #e0e0e0;background:#2D6A4F;color:#fff;font-size:13px;white-space:nowrap;">${m}</th>`
+    ).join("");
+
+    const w = window.open("","_blank");
+    w.document.write(`<!DOCTYPE html>
+<html><head><title>Family Kitchen — Weekly Menu</title>
+<style>
+  @page { size:A4 landscape; margin:15mm; }
+  body { font-family:Arial,sans-serif; color:#1A1A2E; }
+  h1 { font-size:22px; margin-bottom:4px; color:#2D6A4F; }
+  p  { font-size:12px; color:#888; margin-bottom:16px; }
+  table { width:100%; border-collapse:collapse; page-break-inside:avoid; }
+  th,td { text-align:left; }
+  .footer { margin-top:20px; font-size:11px; color:#aaa; text-align:center; }
+  @media print { button { display:none; } body { margin:0; } }
+</style>
+</head><body>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+    <div>
+      <h1>👨‍👩‍👧‍👦 Family Kitchen — Weekly Menu</h1>
+      <p>Generated on ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})} · ${approved} items approved</p>
+    </div>
+    <button onclick="window.print()" style="background:#F4A200;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;">🖨️ Print</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="padding:10px 12px;border:1px solid #e0e0e0;background:#1A1A2E;color:#fff;font-size:13px;">Day</th>
+        ${mealHeaders}
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">Family Kitchen · Designed by Revive Healthcare · ${new Date().getFullYear()}</div>
+</body></html>`);
+    w.document.close();
+    setTimeout(()=>w.print(), 500);
+  };
+
   return (
     <div>
-      <div style={{ marginBottom:20 }}>
-        <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>Finalize Menu</h2>
-        <p style={{ color:"#999", fontSize:13 }}>Approve items for the week — only approved items go to the shopping list</p>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+        <div>
+          <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>Finalize Menu</h2>
+          <p style={{ color:"#999", fontSize:13 }}>Approve items for the week — only approved items go to the shopping list</p>
+        </div>
+        <button
+          onClick={printMenu}
+          disabled={approved===0}
+          style={{ background: approved>0?"#1A1A2E":"#ccc", color:"#fff", border:"none", padding:"9px 16px", borderRadius:10, fontWeight:700, fontSize:13, cursor:approved>0?"pointer":"not-allowed", flexShrink:0, display:"flex", alignItems:"center", gap:6 }}>
+          🖨️ Print Menu
+        </button>
       </div>
       {days.map(day=>{
         const dayItems = planner.filter(p=>p.day===day);
