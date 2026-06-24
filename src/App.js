@@ -319,28 +319,37 @@ export default function App() {
     setLoading(false);
   }, [showToast]);
 
-  // ── Handle phone back button — navigate within app instead of closing ──────────
+  // ── Back button: push a new history entry on every navigation ─────────────────
+  // We maintain our own navStack to know exactly where to go back to
+  const navStack = React.useRef([]);
+
+  const navigate = useCallback((fn, label) => {
+    // Push current state before navigating
+    navStack.current.push({ view, selDay, selMeal, selMealView });
+    window.history.pushState({ idx: navStack.current.length }, "", window.location.pathname);
+    fn(); // perform the navigation
+  }, [view, selDay, selMeal, selMealView]);
+
   useEffect(() => {
     if (screen !== "app") return;
 
-    const handleBack = (e) => {
-      // Meal detail → Day view
-      if (selMeal) { setSelMeal(null); window.history.pushState(null, "", window.location.pathname); return; }
-      // Day view → Dashboard
-      if (selDay)  { setSelDay(null);  window.history.pushState(null, "", window.location.pathname); return; }
-      // Meal week view → Dashboard
-      if (selMealView) { setSelMealView(null); window.history.pushState(null, "", window.location.pathname); return; }
-      // Sub-views → Dashboard
-      if (view !== "dashboard") { setView("dashboard"); setSelDay(null); setSelMeal(null); setSelMealView(null); window.history.pushState(null, "", window.location.pathname); return; }
-      // Already on dashboard — let browser handle (minimise app)
+    const handleBack = () => {
+      const prev = navStack.current.pop();
+      if (!prev) return; // nothing to go back to — OS handles it
+      // Restore previous state
+      setView(prev.view);
+      setSelDay(prev.selDay);
+      setSelMeal(prev.selMeal);
+      setSelMealView(prev.selMealView);
+      // Keep a state in history so next back press is catchable
+      window.history.pushState({ idx: navStack.current.length }, "", window.location.pathname);
     };
 
     window.addEventListener("popstate", handleBack);
-    // Push a state so there's always something to pop back to
-    window.history.pushState(null, "", window.location.pathname);
-
+    // Seed one entry so first back press is interceptable
+    window.history.pushState({ idx: 0 }, "", window.location.pathname);
     return () => window.removeEventListener("popstate", handleBack);
-  }, [screen, view, selDay, selMeal]);
+  }, [screen]); // eslint-disable-line
 
   // Register push notifications after login
   const initPush = useCallback(async (memberId) => {
@@ -498,12 +507,12 @@ export default function App() {
           {/* SIDEBAR */}
           <aside className="sidebar" style={{ width:185, background:"#fff", borderRight:"1px solid #ede5d8", padding:"14px 10px", display:"flex", flexDirection:"column", gap:3, position:"sticky", top:60, height:"calc(100vh - 60px)", overflowY:"auto" }}>
             {[["dashboard","📅","Dashboard"],["foods","🍱","Food Database"],["shopping","🛒","Shopping"],["family","👥","Family"]].map(([v,ic,lb])=>(
-              <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>{ setView(v); setSelDay(null); setSelMeal(null); window.history.pushState(null,"",window.location.pathname); }}>{ic} {lb}</button>
+              <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)}>{ic} {lb}</button>
             ))}
             {isHead && (
               <>
                 <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
-                <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); window.history.pushState(null,"",window.location.pathname); }}>✅ Finalize Menu</button>
+                <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>navigate(()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "finalize")}>✅ Finalize Menu</button>
               </>
             )}
             <div style={{ flex:1 }} />
@@ -515,21 +524,21 @@ export default function App() {
 
           {/* MAIN */}
           <main className="main-pad" style={{ flex:1, padding:"22px 24px", overflowY:"auto", paddingBottom:120 }}>
-            {view==="dashboard" && !selDay && !selMealView && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={(d)=>{ setSelDay(d); window.history.pushState(null,"",window.location.pathname); }} onMealViewClick={(m)=>{ setSelMealView(m); window.history.pushState(null,"",window.location.pathname); }} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} />}
-            {view==="dashboard" && selMealView && !selDay && <MealWeekView meal={selMealView} days={DAYS} planner={planner} foods={foods} member={member} onBack={()=>setSelMealView(null)} onAdd={addToPlanner} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} onDayClick={(d)=>{ setSelMealView(null); setSelDay(d); setSelMeal(selMealView); window.history.pushState(null,"",window.location.pathname); }} />}
-            {view==="dashboard" && selDay && !selMeal && <DayView day={selDay} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onBack={()=>{ setSelDay(null); }} onMealClick={(m)=>{ setSelMeal(m); window.history.pushState(null,"",window.location.pathname); }} MICONS={MICONS} MCOLS={MCOLS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} member={member} />}
+            {view==="dashboard" && !selDay && !selMealView && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={(d)=>navigate(()=>setSelDay(d), d)} onMealViewClick={(m)=>navigate(()=>setSelMealView(m), m)} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} />}
+            {view==="dashboard" && selMealView && !selDay && <MealWeekView meal={selMealView} days={DAYS} planner={planner} foods={foods} member={member} onBack={()=>setSelMealView(null)} onAdd={addToPlanner} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} onDayClick={(d)=>navigate(()=>{ setSelMealView(null); setSelDay(d); setSelMeal(selMealView); }, d)} />}
+            {view==="dashboard" && selDay && !selMeal && <DayView day={selDay} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onBack={()=>{ setSelDay(null); }} onMealClick={(m)=>navigate(()=>setSelMeal(m), m)} MICONS={MICONS} MCOLS={MCOLS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} member={member} />}
             {view==="dashboard" && selDay && selMeal && <MealView day={selDay} meal={selMeal} foods={foods} member={member} onBack={()=>setSelMeal(null)} onAdd={addToPlanner} getMealSummary={getMealSummary} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="foods"     && <FoodsView foods={foods} setFoods={setFoods} showToast={showToast} MEALS={MEALS} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="shopping"  && <ShoppingView genList={generateShoppingList} planner={planner} SAPPS={SAPPS} showToast={showToast} isHead={isHead} />}
             {view==="family"    && <FamilyView family={family} setFamily={setFamily} members={members} setMembers={setMembers} member={member} showToast={showToast} MCOLS={MCOLS} isHead={isHead} />}
-            {view==="finalize"  && isHead && <FinalizeView days={DAYS} meals={MEALS} planner={planner} onToggle={toggleFinalized} onGenShopping={()=>setView("shopping")} MICONS={MICONS} MCOLS={MCOLS} />}
+            {view==="finalize"  && isHead && <FinalizeView days={DAYS} meals={MEALS} planner={planner} onToggle={toggleFinalized} onGenShopping={()=>navigate(()=>setView("shopping"), "shopping")} MICONS={MICONS} MCOLS={MCOLS} />}
           </main>
         </div>
 
         {/* BOTTOM NAV (mobile) */}
         <nav className="bnav" style={{ display:"none", position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ede5d8", padding:"6px 8px", justifyContent:"space-around", zIndex:100 }}>
           {[["dashboard","📅","Home"],["foods","🍱","Foods"],["shopping","🛒","Shop"],["family","👥","Family"],...(isHead?[["finalize","✅","Finalize"]]:[])].map(([v,ic,lb])=>(
-            <button key={v} onClick={()=>{ setView(v); setSelDay(null); setSelMeal(null); window.history.pushState(null,"",window.location.pathname); }} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
+            <button key={v} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
               <span style={{ fontSize:18 }}>{ic}</span>
               <span style={{ fontSize:10, color:view===v?"#F4A200":"#999", fontWeight:500 }}>{lb}</span>
             </button>
@@ -1102,9 +1111,26 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMealViewClick, MICONS, MCOLS, showInstallBanner, onInstall }) {
-  const today = new Date().toLocaleDateString("en",{weekday:"long"});
+  const now   = new Date();
+  const today = now.toLocaleDateString("en",{weekday:"long"});
   const totalWeek = planner.length;
   const finalizedCount = planner.filter(p=>p.finalized).length;
+
+  // Re-order days starting from today, and compute actual dates for each
+  const todayIdx = days.indexOf(today);
+  const orderedDays = todayIdx >= 0
+    ? [...days.slice(todayIdx), ...days.slice(0, todayIdx)]
+    : days;
+
+  // Map each day name to its actual calendar date
+  const dayDates = {};
+  orderedDays.forEach((day, i) => {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    dayDates[day] = d;
+  });
+
+  const fmtDate = (d) => d.toLocaleDateString("en-IN", { day:"numeric", month:"short" });
 
   return (
     <div>
@@ -1138,14 +1164,22 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
         })}
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(210px,1fr))", gap:14 }}>
-        {days.map(day=>{
-          const isToday = day===today;
-          const total = meals.reduce((a,m)=>a+(planner.filter(p=>p.day===day&&p.meal===m).length),0);
-          const finCount = planner.filter(p=>p.day===day&&p.finalized).length;
+        {orderedDays.map(day=>{
+          const isToday   = day===today;
+          const dateObj   = dayDates[day];
+          const isTomorrow= dateObj && (dateObj.getDate() - now.getDate() === 1 && dateObj.getMonth()===now.getMonth());
+          const total     = meals.reduce((a,m)=>a+(planner.filter(p=>p.day===day&&p.meal===m).length),0);
+          const finCount  = planner.filter(p=>p.day===day&&p.finalized).length;
           return (
             <div key={day} className="card card-hover" onClick={()=>onDayClick(day)} style={{ border: isToday?"2px solid #F4A200":"1px solid #ede5d8", position:"relative", overflow:"hidden" }}>
+              {/* Badge */}
               {isToday && <div style={{ position:"absolute", top:0, right:0, background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>TODAY</div>}
-              <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", marginBottom:10 }}>{day}</div>
+              {isTomorrow && <div style={{ position:"absolute", top:0, right:0, background:"#2D6A4F", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>TOMORROW</div>}
+              {/* Day name + date */}
+              <div style={{ marginBottom:8 }}>
+                <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{day}</div>
+                {dateObj && <div style={{ fontSize:11, color: isToday?"#F4A200":"#aaa", fontWeight: isToday?700:400, marginTop:2 }}>{fmtDate(dateObj)}</div>}
+              </div>
               {meals.map(meal=>{
                 const items = planner.filter(p=>p.day===day&&p.meal===meal);
                 return <div key={meal} className="meal-row">
