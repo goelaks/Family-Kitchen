@@ -18,8 +18,12 @@ async function registerPush(memberId) {
       const key = Uint8Array.from(atob(VAPID_PUBLIC_KEY.replace(/-/g,'+').replace(/_/g,'/')), c=>c.charCodeAt(0));
       sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:key });
     }
-    // Save subscription to Supabase
-    await sbPost("push_subscriptions", [{ member_id:memberId, subscription:JSON.stringify(sub) }]).catch(()=>{});
+    const subStr = JSON.stringify(sub);
+    // Delete existing subscription for this member then insert fresh (upsert pattern)
+    await fetch(`${SB_URL}/rest/v1/push_subscriptions?member_id=eq.${memberId}`, {
+      method:"DELETE", headers:{ ...H }
+    }).catch(()=>{});
+    await sbPost("push_subscriptions", [{ member_id:memberId, subscription:subStr }]).catch(()=>{});
     return sub;
   } catch(e) { console.warn("Push registration failed:", e.message); return null; }
 }
