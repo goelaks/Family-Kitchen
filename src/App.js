@@ -170,6 +170,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#FFF8F0;}
   .bnav{display:flex!important;}
   .main-pad{padding:14px 14px 130px!important;}
   .grid-2{grid-template-columns:1fr!important;}
+  .meal-strip{grid-template-columns:repeat(4,1fr)!important;}
 }
 `;
 
@@ -1124,15 +1125,15 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
           </div>
         </div>
       )}
-      {/* week summary strip — clickable to show meal-across-week view */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:22 }} className="grid-2">
+      {/* week summary strip — always 4 cols, slim for mobile */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6, marginBottom:18 }}>
         {meals.map(m=>{
           const c = planner.filter(p=>p.meal===m).length;
-          return <div key={m} className="card-hover" onClick={()=>onMealViewClick(m)} style={{ background:"#fff", borderRadius:12, padding:"10px 12px", border:"1px solid #ede5d8", textAlign:"center", cursor:"pointer" }}>
-            <div style={{ fontSize:22 }}>{MICONS[m]}</div>
-            <div style={{ fontSize:20, fontWeight:700, color:"#1A1A2E", marginTop:4 }}>{c}</div>
-            <div style={{ fontSize:11, color:"#999" }}>{m.replace(" Snack","")}</div>
-            <div style={{ fontSize:10, color:"#F4A200", marginTop:4, fontWeight:600 }}>View all →</div>
+          return <div key={m} className="card-hover" onClick={()=>onMealViewClick(m)} style={{ background:"#fff", borderRadius:10, padding:"8px 4px", border:"1px solid #ede5d8", textAlign:"center", cursor:"pointer" }}>
+            <div style={{ fontSize:18 }}>{MICONS[m]}</div>
+            <div style={{ fontSize:16, fontWeight:700, color:"#1A1A2E", marginTop:2, lineHeight:1 }}>{c}</div>
+            <div style={{ fontSize:10, color:"#999", marginTop:2, lineHeight:1.2 }}>{m.replace("Evening Snack","Snack").replace("Breakfast","Bfast")}</div>
+            <div style={{ fontSize:9, color:"#F4A200", marginTop:3, fontWeight:600 }}>View →</div>
           </div>;
         })}
       </div>
