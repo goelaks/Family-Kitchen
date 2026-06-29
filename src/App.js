@@ -355,6 +355,47 @@ export default function App() {
     return () => window.removeEventListener("popstate", handleBack);
   }, [screen]); // eslint-disable-line
 
+  // ── Background sync — refresh planner + members every 30 seconds ─────────────
+  const syncData = useCallback(async (fid) => {
+    if (!fid) return;
+    try {
+      const [plan, mems] = await Promise.all([
+        sbGet("planner_items", `family_id=eq.${fid}&select=*`),
+        sbGet("members",       `family_id=eq.${fid}&select=*`),
+      ]);
+      setPlanner(prev => {
+        // Only update if data actually changed (avoid unnecessary re-renders)
+        const prevStr = JSON.stringify(prev);
+        const nextStr = JSON.stringify(plan||[]);
+        return prevStr === nextStr ? prev : (plan||[]);
+      });
+      setMembers(prev => {
+        const prevStr = JSON.stringify(prev);
+        const nextStr = JSON.stringify(mems||[]);
+        return prevStr === nextStr ? prev : (mems||[]);
+      });
+      // Rebuild usage counts from latest planner
+      const counts = {};
+      (plan||[]).forEach(p => { counts[p.food_name] = (counts[p.food_name]||0) + 1; });
+      setUsageCnt(counts);
+    } catch(e) { /* silent — don't toast on background sync errors */ }
+  }, []);
+
+  useEffect(() => {
+    if (screen !== "app" || !family?.id) return;
+    // Sync immediately when screen becomes active
+    syncData(family.id);
+    // Then poll every 30 seconds
+    const interval = setInterval(() => syncData(family.id), 30000);
+    // Also sync when tab becomes visible again (user switches back to tab)
+    const onVisible = () => { if (document.visibilityState === "visible") syncData(family.id); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [screen, family?.id, syncData]);
+
   // Register push notifications after login
   const initPush = useCallback(async (memberId) => {
     if (!("Notification" in window)) return;
