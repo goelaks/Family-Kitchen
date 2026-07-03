@@ -199,6 +199,10 @@ const T = {
     fatLabel: "fat", fiberLabel: "fiber",
     // Language
     language: "Language",
+    // Days
+    days: { Monday:"Monday", Tuesday:"Tuesday", Wednesday:"Wednesday", Thursday:"Thursday", Friday:"Friday", Saturday:"Saturday", Sunday:"Sunday" },
+    // Meal short names (for compact strips)
+    mealShort: { Breakfast:"Bfast", Lunch:"Lunch", "Evening Snack":"Snack", Dinner:"Dinner" },
   },
   hi: {
     // App
@@ -294,6 +298,10 @@ const T = {
     fatLabel: "वसा", fiberLabel: "फाइबर",
     // Language
     language: "भाषा",
+    // Days
+    days: { Monday:"सोमवार", Tuesday:"मंगलवार", Wednesday:"बुधवार", Thursday:"गुरुवार", Friday:"शुक्रवार", Saturday:"शनिवार", Sunday:"रविवार" },
+    // Meal short names (for compact strips)
+    mealShort: { Breakfast:"नाश्ता", Lunch:"दोपहर", "Evening Snack":"शाम", Dinner:"रात" },
   }
 };
 
@@ -1283,7 +1291,8 @@ function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone, lang="e
 
 // ─── MEAL WEEK VIEW — shows one meal across all 7 days ───────────────────────
 function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDayMealItems, MICONS, isHead, onToggle, onRemove, favs, toggleFav, usageCnt, onDayClick }) {
-  const t = useT();
+  const t    = useT();
+  const lang = useLang();
   const [expandedDay, setExpandedDay] = useState(null);
   const mealFoods = foods.filter(f => (Array.isArray(f.categories)?f.categories:[f.category].filter(Boolean)).includes(meal));
   const sortedFoods = [...mealFoods].sort((a,b) => {
@@ -1302,7 +1311,7 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:18 }}>
         <button className="btn btn-g btn-sm" onClick={onBack}>← Dashboard</button>
         <div>
-          <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>{MICONS[meal]} {meal} — All Week</h2>
+          <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>{MICONS[meal]} {t.mealShort[meal]||meal} — {lang==="hi"?"पूरे सप्ताह":"All Week"}</h2>
           <p style={{ fontSize:12, color:"#999", marginTop:2 }}>View and add {meal.toLowerCase()} for each day</p>
         </div>
       </div>
@@ -1319,7 +1328,7 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer" }} onClick={()=>setExpandedDay(isOpen?null:day)}>
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                   {isToday && <span style={{ background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20 }}>TODAY</span>}
-                  <span className="serif" style={{ fontSize:16, fontWeight:700, color:"#1A1A2E" }}>{day}</span>
+                  <span className="serif" style={{ fontSize:16, fontWeight:700, color:"#1A1A2E" }}>{t.days[day]||day}</span>
                   {items.length>0 && <span style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20 }}>{items.length} selected</span>}
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -1431,7 +1440,7 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
           return <div key={m} className="card-hover" onClick={()=>onMealViewClick(m)} style={{ background:"#fff", borderRadius:10, padding:"8px 4px", border:"1px solid #ede5d8", textAlign:"center", cursor:"pointer" }}>
             <div style={{ fontSize:18 }}>{MICONS[m]}</div>
             <div style={{ fontSize:16, fontWeight:700, color:"#1A1A2E", marginTop:2, lineHeight:1 }}>{c}</div>
-            <div style={{ fontSize:10, color:"#999", marginTop:2, lineHeight:1.2 }}>{lang==="hi" ? {"Breakfast":t.breakfast,"Lunch":t.lunch,"Evening Snack":t.eveningSnack,"Dinner":t.dinner}[m]||m : m.replace("Evening Snack","Snack").replace("Breakfast","Bfast")}</div>
+            <div style={{ fontSize:10, color:"#999", marginTop:2, lineHeight:1.2 }}>{t.mealShort[m]||m}</div>
             <div style={{ fontSize:9, color:"#F4A200", marginTop:3, fontWeight:600 }}>View →</div>
           </div>;
         })}
@@ -1446,17 +1455,17 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
           return (
             <div key={day} className="card card-hover" onClick={()=>onDayClick(day)} style={{ border: isToday?"2px solid #F4A200":"1px solid #ede5d8", position:"relative", overflow:"hidden" }}>
               {/* Badge */}
-              {isToday && <div style={{ position:"absolute", top:0, right:0, background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>TODAY</div>}
-              {isTomorrow && <div style={{ position:"absolute", top:0, right:0, background:"#2D6A4F", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>TOMORROW</div>}
+              {isToday && <div style={{ position:"absolute", top:0, right:0, background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>{t.today}</div>}
+              {isTomorrow && <div style={{ position:"absolute", top:0, right:0, background:"#2D6A4F", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>{t.tomorrow}</div>}
               {/* Day name + date */}
               <div style={{ marginBottom:8 }}>
-                <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{day}</div>
+                <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{t.days[day]||day}</div>
                 {dateObj && <div style={{ fontSize:11, color: isToday?"#F4A200":"#aaa", fontWeight: isToday?700:400, marginTop:2 }}>{fmtDate(dateObj)}</div>}
               </div>
               {meals.map(meal=>{
                 const items = planner.filter(p=>p.day===day&&p.meal===meal);
                 return <div key={meal} className="meal-row">
-                  <span style={{ fontSize:12, color:"#888" }}>{MICONS[meal]} {meal.replace(" Snack","Snk")}</span>
+                  <span style={{ fontSize:12, color:"#888" }}>{MICONS[meal]} {t.mealShort[meal]||meal}</span>
                   <span style={{ fontSize:11, background:items.length>0?"#fff8e1":"#f5f5f5", color:items.length>0?"#a87800":"#ccc", padding:"2px 7px", borderRadius:20, fontWeight:700 }}>{items.length||"—"}</span>
                 </div>;
               })}
