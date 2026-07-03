@@ -103,6 +103,218 @@ async function sbUpdatePassword(accessToken, newPassword) {
 }
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
+// ─── TRANSLATIONS ────────────────────────────────────────────────────────────
+const T = {
+  en: {
+    // App
+    appName: "Family Kitchen",
+    appTagline: "Plan meals together, eat happily",
+    brandedBy: "✅ Live — Designed by Revive Healthcare",
+    // Auth
+    signIn: "Sign In", register: "Register", createAccount: "Create Account",
+    email: "Email Address", password: "Password", confirmPassword: "Confirm Password",
+    username: "Username", usernameSub: "(visible to family members)",
+    forgotPassword: "Forgot password?", sendResetLink: "📧 Send Reset Link",
+    invitedLink: "Invited by a family member?", getJoiningLink: "Get joining link",
+    pleaseWait: "Please wait...",
+    // Family setup
+    setUpFamily: "Set Up Your Family", createFamily: "🏠 Create My Family",
+    joinFamily: "🔗 Join Family", createFamilyLabel: "Create Family",
+    joinFamilyLabel: "Join Family", startNewGroup: "Start a new group",
+    useExistingId: "Use an existing Family ID",
+    familyName: "Family Name", familyPassword: "Family Password",
+    familyPasswordSub: "(share with members)", familyId: "Family ID",
+    askKitchenHead: "Ask your Kitchen Head",
+    // Nav
+    dashboard: "Dashboard", foodDatabase: "Food Database",
+    shopping: "Shopping", family: "Family", finalizeMenu: "Finalize Menu",
+    // Dashboard
+    weeklyMealPlanner: "Weekly Meal Planner", selectionsThisWeek: "selections this week",
+    finalized: "finalized", viewAll: "View →", today: t.today, tomorrow: t.tomorrow,
+    items: "items", clickToAdd: "Tap to add meals",
+    // Meals
+    breakfast: "Breakfast", lunch: "Lunch", eveningSnack: "Evening Snack", dinner: "Dinner",
+    // Meal view
+    currentSelections: t.currentSelections, searchItems: "Search items or ingredients…",
+    favourites: "Favourites", allItems: "All Items",
+    addTo: "Add to", info: "Info", addBtn: "+ Add",
+    timesThisWeek: "time(s) this week",
+    // Food DB
+    foodDatabaseTitle: "Food Database", itemsTotal: "items total",
+    addNewItem: t.addNewItem, csvImport: t.csvImport, aiImport: t.aiImport,
+    searchFoodItems: "Search food items...", editBtn: "Edit", delBtn: "Del",
+    saveToDatabase: t.saveToDatabase, saving: t.saving,
+    cancel: "Cancel", addNewFoodItem: "Add New Food Item", editFoodItem: "Edit Food Item",
+    foodPhoto: "Food Photo", optional: "optional", max2mb: "max 2MB",
+    changePhoto: "Change Photo", uploadPhoto: "Upload Photo", removePhoto: "Remove",
+    foodName: "Food Name", foodNameHi: "Food Name in Hindi (optional)",
+    emoji: "Emoji", portionSize: "Portion Size", calories: "Calories (kcal)",
+    protein: "Protein (g)", carbs: "Carbs (g)", fat: "Fat (g)", fiber: "Fiber (g)",
+    categories: "Categories", selectAll: "(select all that apply)",
+    atLeastOne: "Select at least one category",
+    youtubeUrl: "YouTube URL", ingredients: "Ingredients",
+    onePerLine: "(one per line)", recipeInstructions: "Recipe Instructions",
+    // Shopping
+    shoppingList: "Shopping List", itemsRemaining: "items remaining",
+    haveItems: "have", addItem: "+ Add", refresh: "↻ Refresh",
+    listTab: t.listTab, orderOnlineTab: t.orderOnlineTab,
+    shareOrSave: t.shareOrSave, print: t.print,
+    noShoppingList: "No shopping list yet",
+    noShoppingListSub: "The Kitchen Head must finalize the menu first",
+    orderViaDelivery: "Choose a delivery app. You'll see all items with a search button against each one.",
+    itemsTo: "items", searchOn: "🔍 Search",
+    addedToCart: "✓ Added to Cart", skip: "Skip →", allDone: "🎉 All done!",
+    allDoneSub: "All items have been added to your",
+    // Finalize
+    finalizeTitle: "Finalize Menu",
+    finalizeSub: "Approve items for the week — only approved items go to the shopping list",
+    printMenu: t.printMenu, approved: "Approved", approve: t.approve,
+    itemsApproved: "items approved", generateShoppingList: "🛒 Generate Shopping List →",
+    noMealsPlanned: "No meals planned yet",
+    // Family
+    familyMembers: "Family Members", inviteMember: "Invite Family Member",
+    inviteSub: "Enter their name and email. They register with that email to auto-join.",
+    name: "Name", emailAddress: "Email Address", sendInvite: "📧 Send Invite",
+    sending: "Sending...", adding: "Adding...",
+    makeHead: t.makeHead, remove: "Remove", shareInvite: "📤 Send Link", whatsapp: t.whatsapp,
+    invitePending: t.invitePending, kitchenHead: "★ Head",
+    howPendingJoin: "📋 How pending members join:",
+    pendingStep1: "Tap 📤 Send Link on their card below",
+    pendingStep2: "Send them the message via WhatsApp",
+    pendingStep3: "They open the app link → tap Register",
+    pendingStep4: "They register using the same email → auto-joined! ✅",
+    familyIdAndPassword: t.familyIdAndPassword,
+    shareThisId: "Share this Family ID + family password with new members.",
+    resetFamilyPassword: t.resetFamilyPassword,
+    newFamilyPassword: "New Family Password", confirmFamilyPassword: "Confirm Password",
+    updatePassword: t.updatePassword, updating: t.updating,
+    signOut: "Sign Out",
+    // AI Import
+    aiTitle: "AI Recipe Generator",
+    aiSub: "Type dish names one per line. Claude will generate full recipes and nutrition for all.",
+    generateRecipes: "✨ Generate Recipes", generating: "Generating recipes... (15-20 sec)",
+    saveAll: "💾 Save All", previewOf: "recipes", reviewSub: "Remove any you don't want then save all",
+    // Portions & Nutrition
+    portion: "Portion", kcal: "kcal", proteinLabel: "protein", carbsLabel: "carbs",
+    fatLabel: "fat", fiberLabel: "fiber",
+    // Language
+    language: "Language",
+  },
+  hi: {
+    // App
+    appName: "फैमिली किचन",
+    appTagline: "मिलकर खाना बनाएं, खुशी से खाएं",
+    brandedBy: "✅ लाइव — Revive Healthcare द्वारा डिज़ाइन",
+    // Auth
+    signIn: "साइन इन", register: "रजिस्टर", createAccount: "अकाउंट बनाएं",
+    email: "ईमेल पता", password: "पासवर्ड", confirmPassword: "पासवर्ड की पुष्टि करें",
+    username: "उपयोगकर्ता नाम", usernameSub: "(परिवार के सदस्यों को दिखाई देगा)",
+    forgotPassword: "पासवर्ड भूल गए?", sendResetLink: "📧 रीसेट लिंक भेजें",
+    invitedLink: "किसी परिवार के सदस्य ने आमंत्रित किया?", getJoiningLink: "जॉइनिंग लिंक पाएं",
+    pleaseWait: "कृपया प्रतीक्षा करें...",
+    // Family setup
+    setUpFamily: "अपना परिवार सेट करें", createFamily: "🏠 परिवार बनाएं",
+    joinFamily: "🔗 परिवार जॉइन करें", createFamilyLabel: "परिवार बनाएं",
+    joinFamilyLabel: "परिवार जॉइन करें", startNewGroup: "नया परिवार ग्रुप शुरू करें",
+    useExistingId: "मौजूदा Family ID उपयोग करें",
+    familyName: "परिवार का नाम", familyPassword: "परिवार का पासवर्ड",
+    familyPasswordSub: "(सदस्यों के साथ साझा करें)", familyId: "Family ID",
+    askKitchenHead: "किचन हेड से पूछें",
+    // Nav
+    dashboard: "डैशबोर्ड", foodDatabase: "खाने का डेटाबेस",
+    shopping: "खरीदारी", family: "परिवार", finalizeMenu: "मेनू फाइनल करें",
+    // Dashboard
+    weeklyMealPlanner: "साप्ताहिक भोजन योजना", selectionsThisWeek: "इस सप्ताह चयन",
+    finalized: "फाइनल", viewAll: "देखें →", today: "आज", tomorrow: "कल",
+    items: "आइटम", clickToAdd: "भोजन जोड़ने के लिए टैप करें",
+    // Meals
+    breakfast: "नाश्ता", lunch: "दोपहर का खाना", eveningSnack: "शाम का नाश्ता", dinner: "रात का खाना",
+    // Meal view
+    currentSelections: "📋 वर्तमान चयन", searchItems: "आइटम या सामग्री खोजें…",
+    favourites: "पसंदीदा", allItems: "सभी आइटम",
+    addTo: "जोड़ें", info: "जानकारी", addBtn: "+ जोड़ें",
+    timesThisWeek: "बार इस सप्ताह",
+    // Food DB
+    foodDatabaseTitle: "खाने का डेटाबेस", itemsTotal: "आइटम कुल",
+    addNewItem: "+ नया आइटम", csvImport: "CSV आयात", aiImport: "AI आयात",
+    searchFoodItems: "खाने की चीज़ें खोजें...", editBtn: "संपादित", delBtn: "हटाएं",
+    saveToDatabase: "💾 डेटाबेस में सहेजें", saving: "सहेज रहे हैं...",
+    cancel: "रद्द करें", addNewFoodItem: "नया खाना जोड़ें", editFoodItem: "खाना संपादित करें",
+    foodPhoto: "खाने की फोटो", optional: "वैकल्पिक", max2mb: "अधिकतम 2MB",
+    changePhoto: "फोटो बदलें", uploadPhoto: "फोटो अपलोड करें", removePhoto: "हटाएं",
+    foodName: "खाने का नाम (अंग्रेज़ी)", foodNameHi: "खाने का नाम (हिंदी)",
+    emoji: "इमोजी", portionSize: "मात्रा", calories: "कैलोरी (kcal)",
+    protein: "प्रोटीन (g)", carbs: "कार्बोहाइड्रेट (g)", fat: "वसा (g)", fiber: "फाइबर (g)",
+    categories: "श्रेणियाँ", selectAll: "(सभी लागू विकल्प चुनें)",
+    atLeastOne: "कम से कम एक श्रेणी चुनें",
+    youtubeUrl: "YouTube लिंक", ingredients: "सामग्री",
+    onePerLine: "(प्रत्येक एक लाइन में)", recipeInstructions: "बनाने की विधि",
+    // Shopping
+    shoppingList: "खरीदारी सूची", itemsRemaining: "आइटम शेष",
+    haveItems: "पास में हैं", addItem: "+ जोड़ें", refresh: "↻ रीफ्रेश",
+    listTab: "📋 सूची", orderOnlineTab: "🛒 ऑनलाइन ऑर्डर",
+    shareOrSave: "📤 शेयर / सहेजें", print: "🖨️ प्रिंट",
+    noShoppingList: "अभी कोई खरीदारी सूची नहीं",
+    noShoppingListSub: "किचन हेड को पहले मेनू फाइनल करना होगा",
+    orderViaDelivery: "डिलीवरी ऐप चुनें। हर आइटम के सामने सर्च बटन दिखेगा।",
+    itemsTo: "आइटम", searchOn: "🔍 खोजें",
+    addedToCart: "✓ कार्ट में जोड़ा", skip: "छोड़ें →", allDone: "🎉 हो गया!",
+    allDoneSub: "सभी आइटम आपके",
+    // Finalize
+    finalizeTitle: "मेनू फाइनल करें",
+    finalizeSub: "सप्ताह के लिए आइटम स्वीकृत करें — केवल स्वीकृत आइटम खरीदारी सूची में जाएंगे",
+    printMenu: "🖨️ मेनू प्रिंट करें", approved: "स्वीकृत", approve: "स्वीकृत करें",
+    itemsApproved: "आइटम स्वीकृत", generateShoppingList: "🛒 खरीदारी सूची बनाएं →",
+    noMealsPlanned: "अभी कोई भोजन नियोजित नहीं",
+    // Family
+    familyMembers: "परिवार के सदस्य", inviteMember: "परिवार के सदस्य को आमंत्रित करें",
+    inviteSub: "उनका नाम और ईमेल दर्ज करें। वे उसी ईमेल से रजिस्टर करके ऑटो-जॉइन होंगे।",
+    name: "नाम", emailAddress: "ईमेल पता", sendInvite: "📧 आमंत्रण भेजें",
+    sending: "भेज रहे हैं...", adding: "जोड़ रहे हैं...",
+    makeHead: "हेड बनाएं", remove: "हटाएं", shareInvite: "📤 लिंक भेजें", whatsapp: t.whatsapp,
+    invitePending: "⏳ आमंत्रण लंबित", kitchenHead: "★ किचन हेड",
+    howPendingJoin: "📋 लंबित सदस्य कैसे जॉइन करें:",
+    pendingStep1: "नीचे उनके कार्ड पर 📤 लिंक भेजें टैप करें",
+    pendingStep2: "WhatsApp पर संदेश भेजें",
+    pendingStep3: "वे ऐप लिंक खोलें → रजिस्टर टैप करें",
+    pendingStep4: "वे उसी ईमेल से रजिस्टर करें → ऑटो-जॉइन! ✅",
+    familyIdAndPassword: "🔗 Family ID और पासवर्ड",
+    shareThisId: "यह Family ID और पासवर्ड नए सदस्यों के साथ साझा करें।",
+    resetFamilyPassword: "🔑 परिवार का पासवर्ड बदलें",
+    newFamilyPassword: "नया परिवार पासवर्ड", confirmFamilyPassword: "पासवर्ड की पुष्टि करें",
+    updatePassword: "पासवर्ड अपडेट करें", updating: "अपडेट हो रहा है...",
+    signOut: "साइन आउट",
+    // AI Import
+    aiTitle: "AI रेसिपी जेनरेटर",
+    aiSub: "प्रत्येक लाइन पर व्यंजन का नाम लिखें। Claude सभी के लिए पूरी रेसिपी बनाएगा।",
+    generateRecipes: "✨ रेसिपी बनाएं", generating: "रेसिपी बन रही हैं... (15-20 सेकंड)",
+    saveAll: "💾 सभी सहेजें", previewOf: "रेसिपी", reviewSub: "जो नहीं चाहिए हटाएं, फिर सभी सहेजें",
+    // Portions & Nutrition
+    portion: "मात्रा", kcal: "kcal", proteinLabel: "प्रोटीन", carbsLabel: "कार्ब्स",
+    fatLabel: "वसा", fiberLabel: "फाइबर",
+    // Language
+    language: "भाषा",
+  }
+};
+
+// Language context — read/write from localStorage
+const getLang  = () => localStorage.getItem("fk_lang") || "en";
+const setLang  = (l) => localStorage.setItem("fk_lang", l);
+const LangCtx  = React.createContext("en");
+const useLang  = () => React.useContext(LangCtx);
+const useT     = () => T[React.useContext(LangCtx)] || T.en;
+
+// Language toggle button component
+function LangToggle({ lang, onChange, style={} }) {
+  return (
+    <button
+      onClick={() => onChange(lang === "en" ? "hi" : "en")}
+      style={{ background:"none", border:"1px solid currentColor", borderRadius:20, padding:"4px 12px", cursor:"pointer", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:6, ...style }}>
+      🌐 {lang === "en" ? "हिंदी" : "English"}
+    </button>
+  );
+}
+
 const DAYS  = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const MEALS = ["Breakfast","Lunch","Evening Snack","Dinner"];
 const MICONS= { Breakfast:"🌅", Lunch:"☀️", "Evening Snack":"🍵", Dinner:"🌙" };
@@ -199,6 +411,9 @@ export default function App() {
   const [dbReady, setDbReady] = useState(false);
   const [recoveryToken,   setRecoveryToken]   = useState(null); // for password reset
   const [autoInvite,      setAutoInvite]       = useState(false); // auto-open invite popup
+  const [lang,            setLangState]        = useState(getLang); // "en" | "hi"
+
+  const changeLang = (l) => { setLang(l); setLangState(l); };
   const [installPrompt,   setInstallPrompt]   = useState(null); // PWA install prompt
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
@@ -479,6 +694,8 @@ export default function App() {
   };
 
   // ── Password Reset screen (after Supabase recovery redirect) ───────────────
+  const t = T[lang] || T.en;
+
   if (screen==="resetpw") return (
     <>
       <style>{CSS}</style>
@@ -494,7 +711,8 @@ export default function App() {
   if (screen==="login") return (
     <>
       <style>{CSS}</style>
-      <LoginScreen autoInvite={autoInvite} onAutoInviteDone={()=>setAutoInvite(false)} onLogin={async (token, sbUser, mem, fid) => {
+      <LangCtx.Provider value={lang}>
+      <LoginScreen lang={lang} onLangChange={changeLang} autoInvite={autoInvite} onAutoInviteDone={()=>setAutoInvite(false)} onLogin={async (token, sbUser, mem, fid) => {
         setAuthToken(token); setAuthUser(sbUser); setMember(mem);
         await loadAll(fid);
         setScreen("app");
@@ -524,6 +742,7 @@ export default function App() {
       <style>{CSS}</style>
       {toast && <div className="toast" style={{ background: toast.type==="error"?"#C1440E": toast.type==="info"?"#6B5CE7":"#2D6A4F" }}>{toast.msg}</div>}
 
+      <LangCtx.Provider value={lang}>
       <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh" }}>
         {/* HEADER */}
         <header style={{ background:"#fff", borderBottom:"1px solid #ede5d8", padding:"0 20px", height:60, display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100 }}>
@@ -544,20 +763,21 @@ export default function App() {
                 📲 Install App
               </button>
             )}
-            <button className="btn btn-g btn-sm" onClick={async()=>{ if(authToken) await sbSignOut(authToken); localStorage.removeItem("fk_session"); setAuthToken(null); setAuthUser(null); setScreen("login"); setMember(null); setFamily(null); setMembers([]); setFoods([]); setPlanner([]); }}>Sign Out</button>
+            <LangToggle lang={lang} onChange={changeLang} style={{ color:"#555", fontSize:12 }} />
+            <button className="btn btn-g btn-sm" onClick={async()=>{ if(authToken) await sbSignOut(authToken); localStorage.removeItem("fk_session"); setAuthToken(null); setAuthUser(null); setScreen("login"); setMember(null); setFamily(null); setMembers([]); setFoods([]); setPlanner([]); }}>{t.signOut}</button>
           </div>
         </header>
 
         <div style={{ display:"flex", flex:1 }}>
           {/* SIDEBAR */}
           <aside className="sidebar" style={{ width:185, background:"#fff", borderRight:"1px solid #ede5d8", padding:"14px 10px", display:"flex", flexDirection:"column", gap:3, position:"sticky", top:60, height:"calc(100vh - 60px)", overflowY:"auto" }}>
-            {[["dashboard","📅","Dashboard"],["foods","🍱","Food Database"],["shopping","🛒","Shopping"],["family","👥","Family"]].map(([v,ic,lb])=>(
+            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family]].map(([v,ic,lb])=>(
               <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)}>{ic} {lb}</button>
             ))}
             {isHead && (
               <>
                 <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
-                <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>navigate(()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "finalize")}>✅ Finalize Menu</button>
+                <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>navigate(()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "finalize")}>✅ {t.finalizeMenu}</button>
               </>
             )}
             <div style={{ flex:1 }} />
@@ -582,7 +802,7 @@ export default function App() {
 
         {/* BOTTOM NAV (mobile) */}
         <nav className="bnav" style={{ display:"none", position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ede5d8", padding:"6px 8px", justifyContent:"space-around", zIndex:100 }}>
-          {[["dashboard","📅","Home"],["foods","🍱","Foods"],["shopping","🛒","Shop"],["family","👥","Family"],...(isHead?[["finalize","✅","Finalize"]]:[])].map(([v,ic,lb])=>(
+          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family],...(isHead?[["finalize","✅",t.finalizeMenu]]:[])].map(([v,ic,lb])=>(
             <button key={v} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
               <span style={{ fontSize:18 }}>{ic}</span>
               <span style={{ fontSize:10, color:view===v?"#F4A200":"#999", fontWeight:500 }}>{lb}</span>
@@ -663,7 +883,7 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
                 onClick={handleReset}
                 disabled={busy}
                 style={{ width:"100%", background:"#F4A200", color:"#fff", border:"none", padding:14, borderRadius:12, fontWeight:700, fontSize:16, cursor:busy?"not-allowed":"pointer", opacity:busy?0.7:1 }}>
-                {busy ? "Updating..." : "Update Password →"}
+                {busy ? t.updating : "Update Password →"}
               </button>
             </>
           )}
@@ -790,10 +1010,12 @@ function PwInput({ value, onChange, placeholder="Password", autoComplete="curren
 // ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
 const BG = "linear-gradient(150deg,#FFF8F0,#FFF0CC 60%,#FFF8F0)";
 
-function LoginWrap({ children, title, sub, icon }) {
+function LoginWrap({ children, title, sub, icon, langToggle }) {
   return (
     <div style={{ minHeight:"100vh", background:BG, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ width:"100%", maxWidth:430 }}>
+        {/* Language toggle top right */}
+        {langToggle && <div style={{ textAlign:"right", marginBottom:8 }}>{langToggle}</div>}
         <div style={{ textAlign:"center", marginBottom:26 }}>
           <div style={{ fontSize: icon && icon.length > 2 ? 48 : 66 }}>{icon || "👨‍👩‍👧‍👦"}</div>
           <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:30, color:"#1A1A2E", marginTop:8 }}>{title}</h1>
@@ -808,7 +1030,8 @@ function LoginWrap({ children, title, sub, icon }) {
   );
 }
 
-function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone }) {
+function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone, lang="en", onLangChange }) {
+  const t = T[lang] || T.en;
   const [step,      setStep]     = useState("auth");
   const [authMode,  setAuthMode] = useState("signin");
   const [busy,      setBusy]     = useState(false);
@@ -1006,7 +1229,7 @@ function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone }) {
 
   // ── AUTH (Sign In / Register) ─────────────────────────────────────────────
   return (
-    <LoginWrap title="Family Kitchen" sub="Plan meals together, eat happily">
+    <LoginWrap title={t.appName} sub={t.appTagline} langToggle={<LangToggle lang={lang} onChange={onLangChange} style={{ color:"#2D6A4F" }} />}>
       <InvitePopup show={showInvitePopup} onClose={()=>setShowInvitePopup(false)} showToast={showToast} />
       <div className="card" style={{ padding:26 }}>
         {/* Tabs */}
@@ -1018,32 +1241,32 @@ function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone }) {
 
         {authMode === "register" && (
           <div style={{ marginBottom:14 }}>
-            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Username <span style={{ color:"#aaa", fontWeight:400 }}>(visible to family members)</span></label>
+            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>{t.username} <span style={{ color:"#aaa", fontWeight:400 }}>{t.usernameSub}</span></label>
             <input className="input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="e.g. Amit" autoComplete="username" />
           </div>
         )}
         <div style={{ marginBottom:14 }}>
-          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Email Address</label>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>{t.email}</label>
           <input className="input" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@gmail.com" type="email" autoComplete="email" />
         </div>
         <div style={{ marginBottom: authMode==="register" ? 14 : 6 }}>
-          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Password</label>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>{t.password}</label>
           <PwInput value={password} onChange={e=>setPassword(e.target.value)} placeholder={authMode==="register"?"Min. 6 characters":"Your password"} autoComplete={authMode==="register"?"new-password":"current-password"} />
         </div>
         {authMode === "register" && (
           <div style={{ marginBottom:6 }}>
-            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Confirm Password</label>
+            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>{t.confirmPassword}</label>
             <PwInput value={confirmPw} onChange={e=>setConfirmPw(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" />
           </div>
         )}
         {authMode === "signin" && (
           <div style={{ textAlign:"right", marginBottom:16 }}>
-            <span style={{ fontSize:12, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setFpEmail(email); setStep("forgot"); }}>Forgot password?</span>
+            <span style={{ fontSize:12, color:"#F4A200", cursor:"pointer", fontWeight:600 }} onClick={()=>{ setFpEmail(email); setStep("forgot"); }}>{t.forgotPassword}</span>
           </div>
         )}
 
         <button className="btn btn-p" onClick={handleAuth} disabled={busy} style={{ width:"100%", padding:13, fontSize:15, marginTop: authMode==="register"?14:0 }}>
-          {busy ? "Please wait..." : authMode==="signin" ? "Sign In" : "Create Account"}
+          {busy ? t.pleaseWait : authMode==="signin" ? t.signIn : t.createAccount}
         </button>
 
         <div style={{ textAlign:"center", marginTop:14, paddingTop:14, borderTop:"1px solid #f5f0e8" }}>
@@ -1058,6 +1281,7 @@ function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone }) {
 
 // ─── MEAL WEEK VIEW — shows one meal across all 7 days ───────────────────────
 function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDayMealItems, MICONS, isHead, onToggle, onRemove, favs, toggleFav, usageCnt, onDayClick }) {
+  const t = useT();
   const [expandedDay, setExpandedDay] = useState(null);
   const mealFoods = foods.filter(f => (Array.isArray(f.categories)?f.categories:[f.category].filter(Boolean)).includes(meal));
   const sortedFoods = [...mealFoods].sort((a,b) => {
@@ -1156,7 +1380,8 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMealViewClick, MICONS, MCOLS, showInstallBanner, onInstall }) {
-  const now   = new Date();
+  const t   = useT();
+  const now = new Date();
   const today = now.toLocaleDateString("en",{weekday:"long"});
   const totalWeek = planner.length;
   const finalizedCount = planner.filter(p=>p.finalized).length;
@@ -1180,8 +1405,8 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
   return (
     <div>
       <div style={{ marginBottom:20 }}>
-        <h2 className="serif" style={{ fontSize:26, color:"#1A1A2E" }}>Weekly Meal Planner</h2>
-        <p style={{ color:"#999", fontSize:13, marginTop:4 }}>{totalWeek} selections this week · {finalizedCount} finalized</p>
+        <h2 className="serif" style={{ fontSize:26, color:"#1A1A2E" }}>{t.weeklyMealPlanner}</h2>
+        <p style={{ color:"#999", fontSize:13, marginTop:4 }}>{totalWeek} {t.selectionsThisWeek} · {finalizedCount} {t.finalized}</p>
       </div>
       {/* PWA Install Banner */}
       {showInstallBanner && (
@@ -1203,7 +1428,7 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
           return <div key={m} className="card-hover" onClick={()=>onMealViewClick(m)} style={{ background:"#fff", borderRadius:10, padding:"8px 4px", border:"1px solid #ede5d8", textAlign:"center", cursor:"pointer" }}>
             <div style={{ fontSize:18 }}>{MICONS[m]}</div>
             <div style={{ fontSize:16, fontWeight:700, color:"#1A1A2E", marginTop:2, lineHeight:1 }}>{c}</div>
-            <div style={{ fontSize:10, color:"#999", marginTop:2, lineHeight:1.2 }}>{m.replace("Evening Snack","Snack").replace("Breakfast","Bfast")}</div>
+            <div style={{ fontSize:10, color:"#999", marginTop:2, lineHeight:1.2 }}>{lang==="hi" ? {"Breakfast":t.breakfast,"Lunch":t.lunch,"Evening Snack":t.eveningSnack,"Dinner":t.dinner}[m]||m : m.replace("Evening Snack","Snack").replace("Breakfast","Bfast")}</div>
             <div style={{ fontSize:9, color:"#F4A200", marginTop:3, fontWeight:600 }}>View →</div>
           </div>;
         })}
@@ -1287,6 +1512,8 @@ function DayView({ day, meals, planner, getMealSummary, onBack, onMealClick, MIC
 
 // ─── MEAL VIEW ────────────────────────────────────────────────────────────────
 function MealView({ day, meal, foods, member, onBack, onAdd, getMealSummary, getDayMealItems, MICONS, isHead, onToggle, onRemove, favs, toggleFav, usageCnt }) {
+  const t = useT();
+  const lang = useLang();
   const [detail, setDetail] = useState(null);
   const [search, setSearch] = useState("");
   const searchRef = React.useRef();
@@ -1326,7 +1553,7 @@ function MealView({ day, meal, foods, member, onBack, onAdd, getMealSummary, get
           <div style={{ width:140, height:140, borderRadius:16, overflow:"hidden", margin:"0 auto 12px", background:"#f9f9f9", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <FoodImage food={detail} size={140} radius={16} />
           </div>
-          <h2 className="serif" style={{ fontSize:24, marginTop:8 }}>{detail.name}</h2>
+          <h2 className="serif" style={{ fontSize:24, marginTop:8 }}>{(lang==="hi"&&detail.name_hi)||detail.name}</h2>
           <p style={{ color:"#999", fontSize:13, marginTop:4 }}>📏 Portion: <b style={{ color:"#555" }}>{detail.portion}</b></p>
           {usageCnt[detail.name]>0 && <p style={{ color:"#2D6A4F", fontSize:12, marginTop:4 }}>✓ Added {usageCnt[detail.name]} time{usageCnt[detail.name]!==1?"s":""} this week</p>}
         </div>
@@ -1458,6 +1685,8 @@ function FoodImage({ food, size=48, radius=8 }) {
 
 // ─── FOOD DATABASE ─────────────────────────────────────────────────────────────
 function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCnt }) {
+  const t = useT();
+  const lang = useLang();
   const [cat,          setCat]         = useState("All");
   const [form,         setForm]        = useState(null);
   const [busy,         setBusy]        = useState(false);
@@ -1491,8 +1720,8 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
   })();
 
   const fv = k => e => setForm(p=>({...p,[k]:e.target.value}));
-  const startAdd  = () => { setPhotoPreview(null); setForm({ name:"", categories:["Breakfast"], emoji:"🍽️", photo_url:"", calories:"", protein:"", carbs:"", fat:"", fiber:"", portion:"", ingredients:"", recipe:"", youtube:"" }); setImportMode(null); };
-  const startEdit = fd => { setPhotoPreview(fd.photo_url||null); setForm({ ...fd, categories:Array.isArray(fd.categories)?fd.categories:[fd.category].filter(Boolean), ingredients:(fd.ingredients||[]).join("\n") }); setImportMode(null); };
+  const startAdd  = () => { setPhotoPreview(null); setForm({ name:"", name_hi:"", categories:["Breakfast"], emoji:"🍽️", photo_url:"", calories:"", protein:"", carbs:"", fat:"", fiber:"", portion:"", ingredients:"", recipe:"", youtube:"" }); setImportMode(null); };
+  const startEdit = fd => { setPhotoPreview(fd.photo_url||null); setForm({ ...fd, name_hi:fd.name_hi||"", categories:Array.isArray(fd.categories)?fd.categories:[fd.category].filter(Boolean), ingredients:(fd.ingredients||[]).join("\n") }); setImportMode(null); };
   const toggleCat = c => setForm(p => { const cats=p.categories||[]; return { ...p, categories: cats.includes(c)?cats.filter(x=>x!==c):[...cats,c] }; });
 
   const handlePhoto = e => {
@@ -1509,7 +1738,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
     if (!form.categories?.length) { showToast("Select at least one category","error"); return; }
     setBusy(true);
     try {
-      const payload = { ...form, category:form.categories[0], calories:+form.calories||0, protein:+form.protein||0, carbs:+form.carbs||0, fat:+form.fat||0, fiber:+form.fiber||0, ingredients:(form.ingredients||"").split("\n").filter(Boolean), photo_url:form.photo_url||null };
+      const payload = { ...form, category:form.categories[0], calories:+form.calories||0, protein:+form.protein||0, carbs:+form.carbs||0, fat:+form.fat||0, fiber:+form.fiber||0, ingredients:(form.ingredients||"").split("\n").filter(Boolean), photo_url:form.photo_url||null, name_hi:form.name_hi||null };
       if (form.id) {
         await sbPatch("foods",`id=eq.${form.id}`,payload);
         setFoods(p=>p.map(f=>f.id===form.id?{...f,...payload}:f));
@@ -1640,7 +1869,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
               </div>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
-              {[["name","Name *",""],["emoji","Emoji","🍚"],["portion","Portion Size","1 bowl (150g)"],["calories","Calories (kcal)","250"],["protein","Protein (g)","6"],["carbs","Carbs (g)","45"],["fat","Fat (g)","5"],["fiber","Fiber (g)","3"]].map(([k,l,ph])=>(
+              {[["name",t.foodName,""],["name_hi",t.foodNameHi,""],["emoji",t.emoji,"🍚"],["portion",t.portionSize,"1 bowl (150g)"],["calories",t.calories,"250"],["protein",t.protein,"6"],["carbs",t.carbs,"45"],["fat",t.fat,"5"],["fiber",t.fiber,"3"]].map(([k,l,ph])=>(
                 <div key={k}><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>{l}</label><input className="input" value={form[k]||""} onChange={fv(k)} placeholder={ph} /></div>
               ))}
             </div>
@@ -1666,7 +1895,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
               <textarea className="input" value={form.recipe||""} onChange={fv("recipe")} rows={5} style={{ resize:"vertical" }} />
             </div>
             <button className="btn btn-p" onClick={save} disabled={busy} style={{ width:"100%", padding:13, fontSize:15 }}>
-              {busy ? "Saving..." : "Save to Database"}
+              {busy ? t.saving : "Save to Database"}
             </button>
           </div>
         </div>
@@ -1686,7 +1915,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
                 <div><h3 className="serif" style={{ fontSize:18 }}>Preview — {aiPreview.length} recipes</h3><p style={{ fontSize:12, color:"#888" }}>Remove any you don't want then save all</p></div>
-                <button className="btn btn-p" onClick={()=>saveAiItems(aiPreview)} disabled={busy} style={{ padding:"10px 20px" }}>{busy?"Saving...":"Save All"}</button>
+                <button className="btn btn-p" onClick={()=>saveAiItems(aiPreview)} disabled={busy} style={{ padding:"10px 20px" }}>{busy?t.saving:"Save All"}</button>
               </div>
               <div style={{ display:"grid", gap:12 }}>
                 {aiPreview.map((food,i)=>(
@@ -1706,7 +1935,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
                   </div>
                 ))}
               </div>
-              <button className="btn btn-p" onClick={()=>saveAiItems(aiPreview)} disabled={busy} style={{ width:"100%", padding:13, marginTop:16, fontSize:15 }}>{busy?"Saving...":"Save All to Database"}</button>
+              <button className="btn btn-p" onClick={()=>saveAiItems(aiPreview)} disabled={busy} style={{ width:"100%", padding:13, marginTop:16, fontSize:15 }}>{busy?t.saving:"Save All to Database"}</button>
             </div>
           )}
         </div>
@@ -1763,7 +1992,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
         <div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
             <div>
-              <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>Food Database</h2>
+              <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>{t.foodDatabaseTitle}</h2>
               <p style={{ color:"#999", fontSize:13 }}>{foods.length} items total</p>
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap", justifyContent:"flex-end" }}>
@@ -1792,7 +2021,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
                 <div style={{ width:"100%", height:100, borderRadius:10, overflow:"hidden", marginBottom:8, background:"#f9f9f9", display:"flex", alignItems:"center", justifyContent:"center" }}>
                   <FoodImage food={food} size={80} radius={0} />
                 </div>
-                <div style={{ fontWeight:600, textAlign:"center", fontSize:14, marginBottom:3 }}>{food.name}</div>
+                <div style={{ fontWeight:600, textAlign:"center", fontSize:14, marginBottom:3 }}>{(lang==="hi"&&food.name_hi)||food.name}</div>
                 <div style={{ fontSize:10, color:"#aaa", textAlign:"center", marginBottom:5, display:"flex", flexWrap:"wrap", gap:3, justifyContent:"center" }}>
                   {foodCats(food).map(c=><span key={c} style={{ background:"#f5f0e8", borderRadius:10, padding:"1px 6px" }}>{c}</span>)}
                 </div>
@@ -1823,6 +2052,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
 
 // ─── FINALIZE ─────────────────────────────────────────────────────────────────
 function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, MCOLS }) {
+  const t = useT();
   const approved = planner.filter(p=>p.finalized).length;
 
   const printMenu = () => {
@@ -1913,7 +2143,7 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
                     <div key={item.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 10px", background:item.finalized?"#e8f5e9":"#f9f9f9", borderRadius:9, marginBottom:4, border:`1px solid ${item.finalized?"#c8e6c9":"#eee"}`, transition:"all .18s" }}>
                       <span style={{ fontSize:13 }}>{item.food_emoji} {item.food_name} <span style={{ color:"#bbb", fontSize:11 }}>— {item.member_name}</span></span>
                       <button onClick={()=>onToggle(item.id,item.finalized)} style={{ background:item.finalized?"#2D6A4F":"#fff", color:item.finalized?"#fff":"#888", border:`1px solid ${item.finalized?"#2D6A4F":"#ddd"}`, padding:"4px 12px", borderRadius:7, fontSize:12, cursor:"pointer", fontWeight:600, transition:"all .18s" }}>
-                        {item.finalized?"✓ Approved":"Approve"}
+                        {item.finalized?`✓ ${t.approved}`:t.approve}
                       </button>
                     </div>
                   ))}
@@ -1934,6 +2164,7 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
 
 // ─── SHOPPING ─────────────────────────────────────────────────────────────────
 function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
+  const t = useT();
   const [list,     setList]    = useState(null);
   const [selApp,   setSelApp]  = useState(null);
   const [tab,      setTab]     = useState("list"); // "list" | "shop"
@@ -2078,7 +2309,7 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
         <div>
-          <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>Shopping List</h2>
+          <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>{t.shoppingList}</h2>
           <p style={{ color:"#999", fontSize:13 }}>{uncheckedItems.length} items remaining · {checkedCount} have</p>
         </div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap", justifyContent:"flex-end" }}>
@@ -2089,7 +2320,7 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
 
       {/* Tabs */}
       <div style={{ display:"flex", background:"#f5f0e8", borderRadius:10, padding:4, marginBottom:16, gap:2 }}>
-        {[["list","📋 List"],["shop","🛒 Order Online"]].map(([t,l])=>(
+        {[["list",t.listTab],["shop",t.orderOnlineTab]].map(([t,l])=>(
           <button key={t} onClick={()=>setTab(t)} style={{ flex:1, padding:"9px 4px", borderRadius:8, border:"none", background:tab===t?"#fff":"transparent", fontWeight:tab===t?700:400, fontSize:13, cursor:"pointer", color:tab===t?"#1A1A2E":"#999", boxShadow:tab===t?"0 1px 5px rgba(0,0,0,.08)":"none", transition:"all .18s" }}>{l}</button>
         ))}
       </div>
@@ -2154,6 +2385,7 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
 
 // ─── FAMILY MANAGEMENT ────────────────────────────────────────────────────────
 function FamilyView({ family, setFamily, members, setMembers, member, showToast, MCOLS, isHead }) {
+  const t = useT();
   const [adding, setAdding] = useState(false);
   const [newM,   setNewM]   = useState({ name:"", email:"" });
   const [busy,   setBusy]   = useState(false);
@@ -2232,7 +2464,7 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
         <div>
-          <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>Family Members</h2>
+          <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>{t.familyMembers}</h2>
           {editFam ? (
             <div style={{ display:"flex", gap:8, marginTop:6, alignItems:"center" }}>
               <input className="input" value={famName} onChange={e=>setFamName(e.target.value)} style={{ width:200 }} />
@@ -2366,12 +2598,12 @@ Then tap "Send Joining Link" — done!
                 <PwInput value={frNewPw} onChange={e=>setFrNewPw(e.target.value)} placeholder="New password" autoComplete="new-password" />
               </div>
               <div style={{ marginBottom:12 }}>
-                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>Confirm Password</label>
+                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>{t.confirmPassword}</label>
                 <PwInput value={frConfirm} onChange={e=>setFrConfirm(e.target.value)} placeholder="Re-enter" autoComplete="new-password" />
               </div>
               <div style={{ display:"flex", gap:8 }}>
                 <button className="btn btn-p" onClick={resetFamilyPassword} disabled={busy} style={{ flex:1 }}>
-                  {busy?"Updating…":"Update Password"}
+                  {busy?"Updating…":t.updatePassword}
                 </button>
                 <button className="btn btn-g" onClick={()=>{ setShowReset(false); setFrNewPw(""); setFrConfirm(""); }}>Cancel</button>
               </div>
