@@ -724,6 +724,7 @@ export default function App() {
         setTimeout(() => initPush(mem.id), 2000);
       }} showToast={showToast} />
       {toast && <div className="toast" style={{ background: toast.type==="error"?"#C1440E": toast.type==="info"?"#6B5CE7":"#2D6A4F" }}>{toast.msg}</div>}
+      </LangCtx.Provider>
     </>
   );
 
@@ -810,6 +811,7 @@ export default function App() {
           ))}
         </nav>
       </div>
+      </LangCtx.Provider>
     </>
   );
 }
