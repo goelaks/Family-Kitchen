@@ -1382,7 +1382,8 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMealViewClick, MICONS, MCOLS, showInstallBanner, onInstall }) {
-  const t   = useT();
+  const t    = useT();
+  const lang = useLang();
   const now = new Date();
   const today = now.toLocaleDateString("en",{weekday:"long"});
   const totalWeek = planner.length;
