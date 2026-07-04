@@ -780,7 +780,7 @@ export default function App() {
         <div style={{ display:"flex", flex:1 }}>
           {/* SIDEBAR */}
           <aside className="sidebar" style={{ width:185, background:"#fff", borderRight:"1px solid #ede5d8", padding:"14px 10px", display:"flex", flexDirection:"column", gap:3, position:"sticky", top:60, height:"calc(100vh - 60px)", overflowY:"auto" }}>
-            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family]].map(([v,ic,lb])=>(
+            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family],["feedback","💬",lang==="hi"?"सुझाव":"Feedback"]].map(([v,ic,lb])=>(
               <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)}>{ic} {lb}</button>
             ))}
             {isHead && (
@@ -805,13 +805,14 @@ export default function App() {
             {view==="foods"     && <FoodsView foods={foods} setFoods={setFoods} showToast={showToast} MEALS={MEALS} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="shopping"  && <ShoppingView genList={generateShoppingList} planner={planner} SAPPS={SAPPS} showToast={showToast} isHead={isHead} />}
             {view==="family"    && <FamilyView family={family} setFamily={setFamily} members={members} setMembers={setMembers} member={member} showToast={showToast} MCOLS={MCOLS} isHead={isHead} />}
+            {view==="feedback"  && <FeedbackView member={member} family={family} showToast={showToast} />}
             {view==="finalize"  && isHead && <FinalizeView days={DAYS} meals={MEALS} planner={planner} onToggle={toggleFinalized} onGenShopping={()=>navigate(()=>setView("shopping"), "shopping")} MICONS={MICONS} MCOLS={MCOLS} foods={foods} />}
           </main>
         </div>
 
         {/* BOTTOM NAV (mobile) */}
         <nav className="bnav" style={{ display:"none", position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ede5d8", padding:"6px 8px", justifyContent:"space-around", zIndex:100 }}>
-          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family],...(isHead?[["finalize","✅",t.finalizeMenu]]:[])].map(([v,ic,lb])=>(
+          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family],["feedback","💬",lang==="hi"?"सुझाव":"Suggest"],...(isHead?[["finalize","✅",t.finalizeMenu]]:[])].map(([v,ic,lb])=>(
             <button key={v} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
               <span style={{ fontSize:18 }}>{ic}</span>
               <span style={{ fontSize:10, color:view===v?"#F4A200":"#999", fontWeight:500 }}>{lb}</span>
@@ -2468,6 +2469,172 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
   );
 }
 
+
+// ─── FEEDBACK VIEW ────────────────────────────────────────────────────────────
+function FeedbackView({ member, family, showToast }) {
+  const t    = useT();
+  const lang = useLang();
+  const [form, setForm] = useState({
+    name:    member?.name || "",
+    email:   member?.email || "",
+    phone:   "",
+    category:"suggestion",
+    message: "",
+  });
+  const [busy, setBusy]   = useState(false);
+  const [sent, setSent]   = useState(false);
+
+  const categories = [
+    { value:"suggestion", label: lang==="hi" ? "💡 सुझाव"        : "💡 Suggestion"       },
+    { value:"bug",        label: lang==="hi" ? "🐛 बग रिपोर्ट"   : "🐛 Bug Report"       },
+    { value:"feature",    label: lang==="hi" ? "✨ नया फीचर"      : "✨ Feature Request"  },
+    { value:"other",      label: lang==="hi" ? "📝 अन्य"          : "📝 Other"            },
+  ];
+
+  const handleSubmit = async () => {
+    if (!form.name.trim())    { showToast(lang==="hi"?"नाम आवश्यक है":"Name is required","error"); return; }
+    if (!form.message.trim()) { showToast(lang==="hi"?"सुझाव लिखें":"Please write your message","error"); return; }
+    setBusy(true);
+    try {
+      const SB_URL = "https://fxaqbbzkuyfildqoxlfh.supabase.co";
+      const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4YXFiYnprdXlmaWxkcW94bGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2OTg3OTIsImV4cCI6MjA5NzI3NDc5Mn0.7IMYYWdNwQJIPw52ShJNNqsmqR208Xn3GN4uIxa-9do";
+      const res = await fetch(`${SB_URL}/functions/v1/send-feedback`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${SB_KEY}`, "apikey":SB_KEY },
+        body: JSON.stringify({
+          ...form,
+          familyId:   family?.id,
+          memberName: member?.name,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to send");
+      setSent(true);
+      showToast(lang==="hi" ? "सुझाव भेजा गया! धन्यवाद 🙏" : "Feedback sent! Thank you 🙏");
+    } catch(e) {
+      showToast((lang==="hi"?"भेजने में त्रुटि: ":"Error sending: ") + e.message, "error");
+    }
+    setBusy(false);
+  };
+
+  if (sent) return (
+    <div style={{ textAlign:"center", padding:"60px 20px" }}>
+      <div style={{ fontSize:72 }}>🙏</div>
+      <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, color:"#1A1A2E", marginTop:16 }}>
+        {lang==="hi" ? "धन्यवाद!" : "Thank you!"}
+      </h2>
+      <p style={{ color:"#888", fontSize:14, marginTop:10, lineHeight:1.7 }}>
+        {lang==="hi"
+          ? "आपका सुझाव हमें मिल गया। हम जल्द ही इस पर काम करेंगे।"
+          : "Your feedback has been received. We'll review it and work on improvements."}
+      </p>
+      <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:16, margin:"20px auto", maxWidth:320 }}>
+        <p style={{ fontSize:13, color:"#2D6A4F", fontWeight:600 }}>✅ Revive Healthcare</p>
+        <p style={{ fontSize:12, color:"#888", marginTop:4 }}>admin@revivehealthcare.co.in</p>
+      </div>
+      <button className="btn btn-p" onClick={()=>setSent(false)} style={{ marginTop:8 }}>
+        {lang==="hi" ? "और सुझाव भेजें" : "Send Another"}
+      </button>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ marginBottom:22 }}>
+        <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1A1A2E" }}>
+          {lang==="hi" ? "💬 सुझाव भेजें" : "💬 Send Feedback"}
+        </h2>
+        <p style={{ color:"#999", fontSize:13, marginTop:4 }}>
+          {lang==="hi"
+            ? "आपके सुझाव हमें ऐप को बेहतर बनाने में मदद करते हैं"
+            : "Your suggestions help us improve the app for everyone"}
+        </p>
+      </div>
+
+      <div className="card" style={{ marginBottom:14 }}>
+        {/* Category selector */}
+        <div style={{ marginBottom:18 }}>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:8 }}>
+            {lang==="hi" ? "फीडबैक का प्रकार" : "Feedback Type"}
+          </label>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            {categories.map(c=>(
+              <button key={c.value} onClick={()=>setForm(p=>({...p,category:c.value}))}
+                style={{ padding:"10px 8px", borderRadius:10, border:`2px solid ${form.category===c.value?"#F4A200":"#ede5d8"}`, background:form.category===c.value?"#fff8e1":"#fff", color:form.category===c.value?"#a87800":"#888", fontWeight:form.category===c.value?700:400, fontSize:13, cursor:"pointer", transition:"all .18s", textAlign:"center" }}>
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Name */}
+        <div style={{ marginBottom:14 }}>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>
+            {lang==="hi" ? "आपका नाम *" : "Your Name *"}
+          </label>
+          <input className="input" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))}
+            placeholder={lang==="hi" ? "नाम दर्ज करें" : "Enter your name"} />
+        </div>
+
+        {/* Email */}
+        <div style={{ marginBottom:14 }}>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>
+            {lang==="hi" ? "ईमेल (वैकल्पिक)" : "Email (optional)"}
+          </label>
+          <input className="input" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))}
+            placeholder="you@gmail.com" type="email" />
+        </div>
+
+        {/* Phone */}
+        <div style={{ marginBottom:14 }}>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>
+            {lang==="hi" ? "फ़ोन नंबर (वैकल्पिक)" : "Phone Number (optional)"}
+          </label>
+          <input className="input" value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))}
+            placeholder={lang==="hi" ? "10 अंक का नंबर" : "10-digit number"} type="tel" />
+        </div>
+
+        {/* Message */}
+        <div style={{ marginBottom:20 }}>
+          <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>
+            {lang==="hi" ? "आपका सुझाव *" : "Your Message *"}
+          </label>
+          <textarea className="input" value={form.message}
+            onChange={e=>setForm(p=>({...p,message:e.target.value}))}
+            rows={5} style={{ resize:"vertical" }}
+            placeholder={lang==="hi"
+              ? "अपना सुझाव या समस्या यहाँ लिखें..."
+              : "Describe your suggestion, bug, or idea in detail..."} />
+          <div style={{ textAlign:"right", fontSize:11, color:"#ccc", marginTop:4 }}>{form.message.length} chars</div>
+        </div>
+
+        <button className="btn btn-p" onClick={handleSubmit} disabled={busy}
+          style={{ width:"100%", padding:14, fontSize:15, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          {busy
+            ? (lang==="hi" ? "भेजा जा रहा है..." : "Sending...")
+            : (lang==="hi" ? "📤 सुझाव भेजें" : "📤 Send Feedback")}
+        </button>
+      </div>
+
+      {/* Contact info card */}
+      <div className="card" style={{ background:"#f0fdf4", border:"1px solid #bbf7d0" }}>
+        <div style={{ fontWeight:700, fontSize:13, color:"#2D6A4F", marginBottom:8 }}>
+          {lang==="hi" ? "📬 सीधे संपर्क करें" : "📬 Direct Contact"}
+        </div>
+        <p style={{ fontSize:13, color:"#555", lineHeight:1.8 }}>
+          <b>Revive Healthcare</b><br/>
+          📧 admin@revivehealthcare.co.in<br/>
+        </p>
+        <p style={{ fontSize:12, color:"#aaa", marginTop:8 }}>
+          {lang==="hi"
+            ? "हम आमतौर पर 24-48 घंटों में जवाब देते हैं"
+            : "We typically respond within 24-48 hours"}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // ─── FAMILY MANAGEMENT ────────────────────────────────────────────────────────
 function FamilyView({ family, setFamily, members, setMembers, member, showToast, MCOLS, isHead }) {
