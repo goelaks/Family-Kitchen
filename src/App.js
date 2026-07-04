@@ -3041,16 +3041,8 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
 
     // Last member — confirm delete entire family
     const confirmMsg = isLastMember
-      ? (lang==="hi" ? t.leaveFamilyLast + "
-
-" + t.leaveFamilyLastConfirm : t.leaveFamilyLast + "
-
-" + t.leaveFamilyLastConfirm)
-      : (lang==="hi" ? t.leaveFamilyConfirm + "
-
-" + t.leaveFamilyWarn : t.leaveFamilyConfirm + "
-
-" + t.leaveFamilyWarn);
+      ? (lang==="hi" ? t.leaveFamilyLast + "\n\n" + t.leaveFamilyLastConfirm : t.leaveFamilyLast + "\n\n" + t.leaveFamilyLastConfirm)
+      : (lang==="hi" ? t.leaveFamilyConfirm + "\n\n" + t.leaveFamilyWarn : t.leaveFamilyConfirm + "\n\n" + t.leaveFamilyWarn);
 
     if (!window.confirm(confirmMsg)) return;
 
