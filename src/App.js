@@ -780,13 +780,15 @@ export default function App() {
         <div style={{ display:"flex", flex:1 }}>
           {/* SIDEBAR */}
           <aside className="sidebar" style={{ width:185, background:"#fff", borderRight:"1px solid #ede5d8", padding:"14px 10px", display:"flex", flexDirection:"column", gap:3, position:"sticky", top:60, height:"calc(100vh - 60px)", overflowY:"auto" }}>
-            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family],["feedback","💬",lang==="hi"?"सुझाव":"Feedback"]].map(([v,ic,lb])=>(
+            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family]].map(([v,ic,lb])=>(
               <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)}>{ic} {lb}</button>
             ))}
             {isHead && (
               <>
                 <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
                 <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>navigate(()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "finalize")}>✅ {t.finalizeMenu}</button>
+                <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
+                <button className={`nav-btn ${view==="settings"?"act":""}`} onClick={()=>navigate(()=>{ setView("settings"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "settings")}>⚙️ {lang==="hi"?"सेटिंग्स":"Settings"}</button>
               </>
             )}
             <div style={{ flex:1 }} />
@@ -805,14 +807,14 @@ export default function App() {
             {view==="foods"     && <FoodsView foods={foods} setFoods={setFoods} showToast={showToast} MEALS={MEALS} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="shopping"  && <ShoppingView genList={generateShoppingList} planner={planner} SAPPS={SAPPS} showToast={showToast} isHead={isHead} />}
             {view==="family"    && <FamilyView family={family} setFamily={setFamily} members={members} setMembers={setMembers} member={member} showToast={showToast} MCOLS={MCOLS} isHead={isHead} />}
-            {view==="feedback"  && <FeedbackView member={member} family={family} showToast={showToast} />}
+            {view==="settings"  && <SettingsView member={member} family={family} showToast={showToast} lang={lang} onLangChange={changeLang} isHead={isHead} />}
             {view==="finalize"  && isHead && <FinalizeView days={DAYS} meals={MEALS} planner={planner} onToggle={toggleFinalized} onGenShopping={()=>navigate(()=>setView("shopping"), "shopping")} MICONS={MICONS} MCOLS={MCOLS} foods={foods} />}
           </main>
         </div>
 
         {/* BOTTOM NAV (mobile) */}
         <nav className="bnav" style={{ display:"none", position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ede5d8", padding:"6px 8px", justifyContent:"space-around", zIndex:100 }}>
-          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family],["feedback","💬",lang==="hi"?"सुझाव":"Suggest"],...(isHead?[["finalize","✅",t.finalizeMenu]]:[])].map(([v,ic,lb])=>(
+          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family],...(isHead?[["finalize","✅",t.finalizeMenu]]:[]),["settings","⚙️",lang==="hi"?"सेटिंग्स":"Settings"]].map(([v,ic,lb])=>(
             <button key={v} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
               <span style={{ fontSize:18 }}>{ic}</span>
               <span style={{ fontSize:10, color:view===v?"#F4A200":"#999", fontWeight:500 }}>{lb}</span>
@@ -2469,6 +2471,161 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
   );
 }
 
+
+// ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
+function SettingsView({ member, family, showToast, lang, onLangChange, isHead }) {
+  const t = useT();
+  const [section, setSection] = useState(null); // null | "feedback"
+  const [notifEnabled, setNotifEnabled] = useState(Notification?.permission === "granted");
+
+  const appVersion = "1.0.0";
+
+  const toggleNotifications = async () => {
+    if (!("Notification" in window)) { showToast("Notifications not supported on this browser","error"); return; }
+    if (Notification.permission === "granted") {
+      showToast(lang==="hi" ? "नोटिफिकेशन बंद करने के लिए ब्राउज़र सेटिंग्स में जाएं" : "To disable notifications, go to your browser settings","info");
+    } else {
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") { setNotifEnabled(true); showToast(lang==="hi" ? "नोटिफिकेशन चालू हो गया! ✅" : "Notifications enabled! ✅"); }
+      else { showToast(lang==="hi" ? "अनुमति नहीं मिली" : "Permission denied","error"); }
+    }
+  };
+
+  if (section === "feedback") return (
+    <div>
+      <button className="btn btn-g btn-sm" onClick={()=>setSection(null)} style={{ marginBottom:16 }}>
+        ← {lang==="hi" ? "सेटिंग्स" : "Settings"}
+      </button>
+      <FeedbackView member={member} family={family} showToast={showToast} />
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ marginBottom:24 }}>
+        <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#1A1A2E" }}>
+          ⚙️ {lang==="hi" ? "सेटिंग्स" : "Settings"}
+        </h2>
+        <p style={{ color:"#999", fontSize:13, marginTop:4 }}>
+          {lang==="hi" ? "ऐप की सेटिंग्स और जानकारी" : "App preferences and information"}
+        </p>
+      </div>
+
+      {/* PREFERENCES */}
+      <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:.8 }}>
+        {lang==="hi" ? "प्राथमिकताएं" : "Preferences"}
+      </div>
+      <div className="card" style={{ marginBottom:18 }}>
+        {/* Language toggle */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", borderBottom:"1px solid #f5f0e8" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <span style={{ fontSize:22 }}>🌐</span>
+            <div>
+              <div style={{ fontWeight:600, fontSize:14, color:"#1A1A2E" }}>{lang==="hi" ? "भाषा" : "Language"}</div>
+              <div style={{ fontSize:12, color:"#aaa" }}>{lang==="hi" ? "हिंदी / English" : "Hindi / English"}</div>
+            </div>
+          </div>
+          <button
+            onClick={()=>onLangChange(lang==="en"?"hi":"en")}
+            style={{ background:lang==="hi"?"#fff8e1":"#f0fdf4", border:`1px solid ${lang==="hi"?"#F4A200":"#2D6A4F"}`, color:lang==="hi"?"#a87800":"#2D6A4F", padding:"6px 16px", borderRadius:20, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            {lang==="en" ? "हिंदी" : "English"}
+          </button>
+        </div>
+
+        {/* Notifications */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <span style={{ fontSize:22 }}>🔔</span>
+            <div>
+              <div style={{ fontWeight:600, fontSize:14, color:"#1A1A2E" }}>{lang==="hi" ? "नोटिफिकेशन" : "Notifications"}</div>
+              <div style={{ fontSize:12, color:"#aaa" }}>
+                {notifEnabled
+                  ? (lang==="hi" ? "चालू है" : "Enabled")
+                  : (lang==="hi" ? "बंद है" : "Disabled")}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={toggleNotifications}
+            style={{ background:notifEnabled?"#e8f5e9":"#f5f5f5", border:`1px solid ${notifEnabled?"#c8e6c9":"#ddd"}`, color:notifEnabled?"#2D6A4F":"#999", padding:"6px 16px", borderRadius:20, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            {notifEnabled ? (lang==="hi" ? "✓ चालू" : "✓ On") : (lang==="hi" ? "चालू करें" : "Turn On")}
+          </button>
+        </div>
+      </div>
+
+      {/* ACCOUNT INFO */}
+      <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:.8 }}>
+        {lang==="hi" ? "अकाउंट जानकारी" : "Account"}
+      </div>
+      <div className="card" style={{ marginBottom:18 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:14, padding:"6px 0", borderBottom:"1px solid #f5f0e8", marginBottom:10 }}>
+          <div style={{ width:46, height:46, borderRadius:"50%", background:"linear-gradient(135deg,#F4A200,#e09800)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, fontWeight:700, color:"#fff", flexShrink:0 }}>
+            {(member?.name||"?")[0]}
+          </div>
+          <div>
+            <div style={{ fontWeight:700, fontSize:15, color:"#1A1A2E" }}>{member?.name}</div>
+            <div style={{ fontSize:12, color:"#aaa" }}>✉️ {member?.email}</div>
+            {isHead && <div style={{ fontSize:11, color:"#F4A200", fontWeight:700, marginTop:2 }}>★ Kitchen Head</div>}
+          </div>
+        </div>
+        {[
+          [lang==="hi"?"परिवार":"Family",   family?.name],
+          [lang==="hi"?"Family ID":"Family ID", family?.id],
+        ].map(([k,v])=>(
+          <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #f9f5ef", fontSize:13 }}>
+            <span style={{ color:"#aaa" }}>{k}</span>
+            <span style={{ fontWeight:600, color:"#555", fontFamily:k==="Family ID"?"monospace":"inherit", fontSize:k==="Family ID"?12:13 }}>{v}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* FEEDBACK */}
+      <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:.8 }}>
+        {lang==="hi" ? "मदद और सुझाव" : "Help & Feedback"}
+      </div>
+      <div className="card" style={{ marginBottom:18 }}>
+        <button onClick={()=>setSection("feedback")}
+          style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", background:"none", border:"none", cursor:"pointer", borderBottom:"1px solid #f5f0e8" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <span style={{ fontSize:22 }}>💬</span>
+            <div style={{ textAlign:"left" }}>
+              <div style={{ fontWeight:600, fontSize:14, color:"#1A1A2E" }}>{lang==="hi" ? "सुझाव / फीडबैक भेजें" : "Send Feedback / Suggestion"}</div>
+              <div style={{ fontSize:12, color:"#aaa" }}>{lang==="hi" ? "बग रिपोर्ट, नया फीचर या सुझाव" : "Bug reports, feature requests, ideas"}</div>
+            </div>
+          </div>
+          <span style={{ color:"#F4A200", fontSize:20 }}>›</span>
+        </button>
+        <a href="mailto:admin@revivehealthcare.co.in"
+          style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", textDecoration:"none" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <span style={{ fontSize:22 }}>📧</span>
+            <div>
+              <div style={{ fontWeight:600, fontSize:14, color:"#1A1A2E" }}>{lang==="hi" ? "सीधे ईमेल करें" : "Email Us Directly"}</div>
+              <div style={{ fontSize:12, color:"#aaa" }}>admin@revivehealthcare.co.in</div>
+            </div>
+          </div>
+          <span style={{ color:"#F4A200", fontSize:20 }}>›</span>
+        </a>
+      </div>
+
+      {/* ABOUT */}
+      <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:.8 }}>
+        {lang==="hi" ? "ऐप के बारे में" : "About"}
+      </div>
+      <div className="card" style={{ marginBottom:18 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:14, padding:"8px 0" }}>
+          <span style={{ fontSize:36 }}>👨‍👩‍👧‍👦</span>
+          <div>
+            <div style={{ fontWeight:700, fontSize:15, color:"#1A1A2E" }}>Family Kitchen</div>
+            <div style={{ fontSize:12, color:"#aaa" }}>Version {appVersion}</div>
+            <div style={{ fontSize:12, color:"#2D6A4F", marginTop:2 }}>✅ Designed by Revive Healthcare</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── FEEDBACK VIEW ────────────────────────────────────────────────────────────
 function FeedbackView({ member, family, showToast }) {
