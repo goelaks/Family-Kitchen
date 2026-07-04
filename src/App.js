@@ -115,7 +115,7 @@ const T = {
     email: "Email Address", password: "Password", confirmPassword: "Confirm Password",
     username: "Username", usernameSub: "(visible to family members)",
     forgotPassword: "Forgot password?", sendResetLink: "📧 Send Reset Link",
-    invitedLink: "Invited by a family member?", getJoiningLink: "Get joining link",
+    invitedLink: "Have an invite?", getJoiningLink: "Join your family",
     pleaseWait: "Please wait...",
     // Family setup
     setUpFamily: "Set Up Your Family", createFamily: "🏠 Create My Family",
@@ -189,6 +189,19 @@ const T = {
     newFamilyPassword: "New Family Password", confirmFamilyPassword: "Confirm Password",
     updatePassword: "Update Password", updating: "Updating...",
     signOut: "Sign Out",
+    leaveFamily: "Leave Family", leaveFamilyConfirm: "Are you sure you want to leave this family group?",
+    leaveFamilyWarn: "You will need to join or create a new family after leaving.",
+    leaveFamilyHead: "You are the Kitchen Head. Please transfer the Head role to another member before leaving.",
+    leaveFamilyLast: "You are the only member. Leaving will permanently delete this family group and all meal plans.",
+    leaveFamilyLastConfirm: "Delete family group and all data?",
+    transferFirst: "Transfer Head role first",
+    leaving: "Leaving...",
+    deleteAccount: "Delete My Account",
+    deleteAccountSub: "Permanently delete your account and all your data",
+    deleteAccountWarn: "This will permanently delete your account. Type DELETE to confirm.",
+    deleteAccountHead: "You are the Kitchen Head. Transfer the Head role to another member before deleting your account.",
+    deleteAccountLast: "You are the only member. Deleting your account will also permanently delete the entire family group and all meal plans.",
+    deleting: "Deleting...",
     // AI Import
     aiTitle: "AI Recipe Generator",
     aiSub: "Type dish names one per line. Claude will generate full recipes and nutrition for all.",
@@ -214,7 +227,7 @@ const T = {
     email: "ईमेल पता", password: "पासवर्ड", confirmPassword: "पासवर्ड की पुष्टि करें",
     username: "उपयोगकर्ता नाम", usernameSub: "(परिवार के सदस्यों को दिखाई देगा)",
     forgotPassword: "पासवर्ड भूल गए?", sendResetLink: "📧 रीसेट लिंक भेजें",
-    invitedLink: "किसी परिवार के सदस्य ने आमंत्रित किया?", getJoiningLink: "जॉइनिंग लिंक पाएं",
+    invitedLink: "आमंत्रण मिला है?", getJoiningLink: "परिवार में शामिल हों",
     pleaseWait: "कृपया प्रतीक्षा करें...",
     // Family setup
     setUpFamily: "अपना परिवार सेट करें", createFamily: "🏠 परिवार बनाएं",
@@ -288,6 +301,19 @@ const T = {
     newFamilyPassword: "नया परिवार पासवर्ड", confirmFamilyPassword: "पासवर्ड की पुष्टि करें",
     updatePassword: "पासवर्ड अपडेट करें", updating: "अपडेट हो रहा है...",
     signOut: "साइन आउट",
+    leaveFamily: "परिवार छोड़ें", leaveFamilyConfirm: "क्या आप वाकई इस परिवार ग्रुप को छोड़ना चाहते हैं?",
+    leaveFamilyWarn: "छोड़ने के बाद आपको नया परिवार बनाना या जॉइन करना होगा।",
+    leaveFamilyHead: "आप किचन हेड हैं। छोड़ने से पहले किसी और को हेड बनाएं।",
+    leaveFamilyLast: "आप अकेले सदस्य हैं। छोड़ने से पूरा परिवार ग्रुप और सभी डेटा हमेशा के लिए डिलीट हो जाएगा।",
+    leaveFamilyLastConfirm: "परिवार ग्रुप और सारा डेटा डिलीट करें?",
+    transferFirst: "पहले हेड बदलें",
+    leaving: "छोड़ रहे हैं...",
+    deleteAccount: "अकाउंट डिलीट करें",
+    deleteAccountSub: "आपका अकाउंट और सारा डेटा हमेशा के लिए हटा दिया जाएगा",
+    deleteAccountWarn: "यह अकाउंट हमेशा के लिए डिलीट हो जाएगा। पुष्टि के लिए DELETE टाइप करें।",
+    deleteAccountHead: "आप किचन हेड हैं। अकाउंट डिलीट करने से पहले किसी और को हेड बनाएं।",
+    deleteAccountLast: "आप अकेले सदस्य हैं। अकाउंट डिलीट करने से पूरा परिवार ग्रुप और सभी डेटा भी हमेशा के लिए हट जाएगा।",
+    deleting: "डिलीट हो रहा है...",
     // AI Import
     aiTitle: "AI रेसिपी जेनरेटर",
     aiSub: "प्रत्येक लाइन पर व्यंजन का नाम लिखें। Claude सभी के लिए पूरी रेसिपी बनाएगा।",
@@ -419,6 +445,7 @@ export default function App() {
   const [dbReady, setDbReady] = useState(false);
   const [recoveryToken,   setRecoveryToken]   = useState(null); // for password reset
   const [autoInvite,      setAutoInvite]       = useState(false); // auto-open invite popup
+  const [autoInviteEmail, setAutoInviteEmail]  = useState("");    // pre-filled email from URL
   const [lang,            setLangState]        = useState(getLang); // "en" | "hi"
 
   const changeLang = (l) => { setLang(l); setLangState(l); };
@@ -443,9 +470,10 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("invite") === "true") {
+      const emailParam = params.get("email") || "";
       window.history.replaceState(null, "", window.location.pathname);
-      // We're on the login screen — signal LoginScreen to open invite popup
       setAutoInvite(true);
+      if (emailParam) setAutoInviteEmail(decodeURIComponent(emailParam));
     }
   }, []);
 
@@ -720,7 +748,7 @@ export default function App() {
     <>
       <style>{CSS}</style>
       <LangCtx.Provider value={lang}>
-      <LoginScreen lang={lang} onLangChange={changeLang} autoInvite={autoInvite} onAutoInviteDone={()=>setAutoInvite(false)} onLogin={async (token, sbUser, mem, fid) => {
+      <LoginScreen lang={lang} onLangChange={changeLang} autoInvite={autoInvite} autoInviteEmail={autoInviteEmail} onAutoInviteDone={()=>{ setAutoInvite(false); setAutoInviteEmail(""); }} onLogin={async (token, sbUser, mem, fid) => {
         setAuthToken(token); setAuthUser(sbUser); setMember(mem);
         await loadAll(fid);
         setScreen("app");
@@ -806,8 +834,20 @@ export default function App() {
             {view==="dashboard" && selDay && selMeal && <MealView day={selDay} meal={selMeal} foods={foods} member={member} onBack={()=>setSelMeal(null)} onAdd={addToPlanner} getMealSummary={getMealSummary} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="foods"     && <FoodsView foods={foods} setFoods={setFoods} showToast={showToast} MEALS={MEALS} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
             {view==="shopping"  && <ShoppingView genList={generateShoppingList} planner={planner} SAPPS={SAPPS} showToast={showToast} isHead={isHead} />}
-            {view==="family"    && <FamilyView family={family} setFamily={setFamily} members={members} setMembers={setMembers} member={member} showToast={showToast} MCOLS={MCOLS} isHead={isHead} />}
-            {view==="settings"  && <SettingsView member={member} family={family} showToast={showToast} lang={lang} onLangChange={changeLang} isHead={isHead} />}
+            {view==="family"    && <FamilyView family={family} setFamily={setFamily} members={members} setMembers={setMembers} member={member} showToast={showToast} MCOLS={MCOLS} isHead={isHead} onLeaveFamily={async () => {
+              // Clear session and log out — they land on family setup
+              if(authToken) await sbSignOut(authToken);
+              localStorage.removeItem("fk_session");
+              setAuthToken(null); setAuthUser(null); setMember(null);
+              setFamily(null); setMembers([]); setFoods([]); setPlanner([]);
+              setView("dashboard"); setScreen("login");
+            }} />}
+            {view==="settings"  && <SettingsView member={member} family={family} showToast={showToast} lang={lang} onLangChange={changeLang} isHead={isHead} members={members} authToken={authToken} onDeleteAccount={async () => {
+              localStorage.removeItem("fk_session");
+              setAuthToken(null); setAuthUser(null); setMember(null);
+              setFamily(null); setMembers([]); setFoods([]); setPlanner([]);
+              setView("dashboard"); setScreen("login");
+            }} />}
             {view==="finalize"  && isHead && <FinalizeView days={DAYS} meals={MEALS} planner={planner} onToggle={toggleFinalized} onGenShopping={()=>navigate(()=>setView("shopping"), "shopping")} MICONS={MICONS} MCOLS={MCOLS} foods={foods} />}
           </main>
         </div>
@@ -872,21 +912,21 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
       <div style={{ width:"100%", maxWidth:420 }}>
         <div style={{ textAlign:"center", marginBottom:28 }}>
           <div style={{ fontSize:64 }}>🔒</div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, color:"#1A1A2E", marginTop:10 }}>Set New Password</h1>
-          <p style={{ color:"#999", fontSize:13, marginTop:6 }}>Choose a strong password for your account</p>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, color:"#1A1A2E", marginTop:10 }}>Set Your Password</h1>
+          <p style={{ color:"#999", fontSize:13, marginTop:6 }}>Choose a password to access your Family Kitchen account</p>
         </div>
         <div style={{ background:"#fff", borderRadius:20, padding:28, border:"1px solid #ede5d8" }}>
           {done ? (
             <div style={{ textAlign:"center", padding:20 }}>
               <div style={{ fontSize:52 }}>✅</div>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#2D6A4F" }}>Password Updated!</div>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#2D6A4F" }}>Password Set!</div>
               <p style={{ color:"#888", fontSize:13, marginTop:8 }}>Redirecting you to sign in...</p>
             </div>
           ) : (
             <>
               <div style={{ marginBottom:16 }}>
                 <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>New Password</label>
-                <PwInput value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
+                <PwInput value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Choose a password (min. 6 characters)" autoComplete="new-password" />
               </div>
               <div style={{ marginBottom:22 }}>
                 <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>Confirm Password</label>
@@ -896,7 +936,7 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
                 onClick={handleReset}
                 disabled={busy}
                 style={{ width:"100%", background:"#F4A200", color:"#fff", border:"none", padding:14, borderRadius:12, fontWeight:700, fontSize:16, cursor:busy?"not-allowed":"pointer", opacity:busy?0.7:1 }}>
-                {busy ? t.updating : "Update Password →"}
+                {busy ? t.updating : "Set My Password →"}
               </button>
             </>
           )}
@@ -911,12 +951,11 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
 
 
 // ─── INVITE POPUP ─────────────────────────────────────────────────────────────
-function InvitePopup({ show, onClose, showToast, initialEmail="", extraAction=null }) {
+function InvitePopup({ show, onClose, showToast, initialEmail="" }) {
   const [email, setEmail] = useState(initialEmail);
   const [busy,  setBusy]  = useState(false);
   const [sent,  setSent]  = useState(false);
 
-  // Update email if initialEmail changes (e.g. different member clicked)
   React.useEffect(() => { if (initialEmail) setEmail(initialEmail); }, [initialEmail]);
 
   if (!show) return null;
@@ -933,7 +972,6 @@ function InvitePopup({ show, onClose, showToast, initialEmail="", extraAction=nu
       }
       await sbSendResetEmail(em);
       setSent(true);
-      showToast("Joining link sent! Check your inbox. 📧");
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
@@ -944,36 +982,41 @@ function InvitePopup({ show, onClose, showToast, initialEmail="", extraAction=nu
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)", zIndex:9000, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ background:"#fff", borderRadius:20, padding:28, width:"100%", maxWidth:400, position:"relative", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
         <button onClick={handleClose} style={{ position:"absolute", top:14, right:16, background:"none", border:"none", fontSize:24, cursor:"pointer", color:"#aaa", lineHeight:1 }}>×</button>
+
         {sent ? (
+          /* ── Confirmation screen — clean, no WhatsApp ── */
           <div style={{ textAlign:"center", padding:"10px 0" }}>
-            <div style={{ fontSize:52 }}>📬</div>
-            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#1A1A2E" }}>Joining link sent!</h3>
-            <p style={{ fontSize:13, color:"#888", marginTop:8, lineHeight:1.7 }}>
-              Email sent to <b>{email}</b>.<br/>
-              Also share the link directly via WhatsApp:
+            <div style={{ fontSize:56 }}>📬</div>
+            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, marginTop:14, color:"#1A1A2E" }}>
+              Check your email
+            </h3>
+            <p style={{ fontSize:13, color:"#888", marginTop:10, lineHeight:1.8 }}>
+              We sent a link to<br/>
+              <b style={{ color:"#1A1A2E" }}>{email}</b>
             </p>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Hi! You have been invited to join our Family Kitchen meal planner 👨‍👩‍👧‍👦
-
-Tap this link to join:
-https://family-kitchen-gamma-rust.vercel.app?invite=true
-
-When it opens, enter this email: ${email}
-Then tap "Send Joining Link" — done!`)}`}
-              target="_blank"
-              rel="noreferrer"
-              style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", marginTop:16, background:"#25D366", color:"#fff", padding:"13px", borderRadius:12, fontWeight:700, fontSize:15, textDecoration:"none" }}>
-              <span style={{ fontSize:20 }}>💬</span> Send via WhatsApp
-            </a>
-            <button onClick={handleClose} className="btn btn-g" style={{ marginTop:10, width:"100%" }}>Done</button>
+            <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:16, margin:"18px 0", textAlign:"left" }}>
+              <div style={{ fontWeight:700, fontSize:13, color:"#2D6A4F", marginBottom:8 }}>What to do next:</div>
+              <div style={{ fontSize:13, color:"#555", lineHeight:1.9 }}>
+                1. Open the email in your inbox<br/>
+                2. Click the <b>Set your password</b> link<br/>
+                3. Choose a password → you are in! ✅
+              </div>
+            </div>
+            <button onClick={handleClose} className="btn btn-p" style={{ width:"100%" }}>Done</button>
           </div>
         ) : (
+          /* ── Email entry screen ── */
           <>
-            <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginBottom:6, color:"#1A1A2E" }}>Join Your Family</h3>
-            <p style={{ fontSize:13, color:"#888", marginBottom:20, lineHeight:1.6 }}>
-              Enter the email your Kitchen Head used to invite you. We will send you a link to set your password and join instantly.
-            </p>
-            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>Your Invited Email</label>
+            <div style={{ textAlign:"center", marginBottom:20 }}>
+              <div style={{ fontSize:44 }}>👨‍👩‍👧‍👦</div>
+              <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, marginTop:10, color:"#1A1A2E" }}>
+                Join your family
+              </h3>
+              <p style={{ fontSize:13, color:"#888", marginTop:6, lineHeight:1.6 }}>
+                Your invited email is pre-filled below. You can change it if needed.
+              </p>
+            </div>
+            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>Your invited email</label>
             <input
               className="input"
               value={email}
@@ -985,10 +1028,35 @@ Then tap "Send Joining Link" — done!`)}`}
               style={{ marginBottom:16 }}
             />
             <button className="btn btn-p" onClick={handleSend} disabled={busy} style={{ width:"100%", padding:13, fontSize:15 }}>
-              {busy ? "Sending..." : "Send Joining Link"}
+              {busy ? "Sending..." : "Send me a link to set my password"}
             </button>
           </>
         )}
+      </div>
+
+      {/* ── Leave Family ─────────────────────────────────────────── */}
+      <div style={{ marginTop:24 }}>
+        <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:.8 }}>
+          {lang==="hi" ? "खतरनाक ज़ोन" : "Danger Zone"}
+        </div>
+        <div className="card" style={{ border:"1px solid #ffdddd", background:"#fffafa" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <div style={{ fontWeight:600, fontSize:14, color:"#C1440E" }}>🚪 {t.leaveFamily}</div>
+              <div style={{ fontSize:12, color:"#aaa", marginTop:3 }}>
+                {isHead && members.filter(m2=>m2.auth_id).length > 1
+                  ? (lang==="hi" ? "पहले किसी और को हेड बनाएं" : "Transfer Head role first")
+                  : (lang==="hi" ? "आपका डेटा हटा दिया जाएगा" : "Your data will be removed")}
+              </div>
+            </div>
+            <button
+              onClick={leaveFamily}
+              disabled={busy}
+              style={{ background:"#C1440E", color:"#fff", border:"none", padding:"9px 18px", borderRadius:10, fontWeight:700, fontSize:13, cursor:busy?"not-allowed":"pointer", opacity:busy?.6:1, flexShrink:0 }}>
+              {busy ? "..." : (lang==="hi" ? t.leaveFamily : t.leaveFamily)}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1043,7 +1111,7 @@ function LoginWrap({ children, title, sub, icon, langToggle }) {
   );
 }
 
-function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone, lang="en", onLangChange }) {
+function LoginScreen({ onLogin, showToast, autoInvite, autoInviteEmail="", onAutoInviteDone, lang="en", onLangChange }) {
   const t = T[lang] || T.en;
   const [step,      setStep]     = useState("auth");
   const [authMode,  setAuthMode] = useState("signin");
@@ -1243,7 +1311,7 @@ function LoginScreen({ onLogin, showToast, autoInvite, onAutoInviteDone, lang="e
   // ── AUTH (Sign In / Register) ─────────────────────────────────────────────
   return (
     <LoginWrap title={t.appName} sub={t.appTagline} langToggle={<LangToggle lang={lang} onChange={onLangChange} style={{ color:"#2D6A4F" }} />}>
-      <InvitePopup show={showInvitePopup} onClose={()=>setShowInvitePopup(false)} showToast={showToast} />
+      <InvitePopup show={showInvitePopup} initialEmail={autoInviteEmail} onClose={()=>setShowInvitePopup(false)} showToast={showToast} />
       <div className="card" style={{ padding:26 }}>
         {/* Tabs */}
         <div style={{ display:"flex", background:"#f5f0e8", borderRadius:10, padding:4, marginBottom:22, gap:2 }}>
@@ -2473,12 +2541,51 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
 
 
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
-function SettingsView({ member, family, showToast, lang, onLangChange, isHead }) {
+function SettingsView({ member, family, showToast, lang, onLangChange, isHead, members, authToken, onDeleteAccount }) {
   const t = useT();
   const [section, setSection] = useState(null); // null | "feedback"
   const [notifEnabled, setNotifEnabled] = useState(Notification?.permission === "granted");
 
   const appVersion = "1.0.0";
+  const [delBusy,    setDelBusy]    = useState(false);
+  const [showDelBox, setShowDelBox] = useState(false);
+  const [delConfirm, setDelConfirm] = useState("");
+
+  const handleDeleteAccount = async () => {
+    // Head with other members — must transfer first
+    if (isHead && (members||[]).filter(m=>m.auth_id && m.id!==member.id).length > 0) {
+      showToast(t.deleteAccountHead, "error"); return;
+    }
+    if (delConfirm !== "DELETE") {
+      showToast(lang==="hi" ? "DELETE टाइप करें" : "Please type DELETE to confirm", "error"); return;
+    }
+    setDelBusy(true);
+    try {
+      const SB_URL = "https://fxaqbbzkuyfildqoxlfh.supabase.co";
+      const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4YXFiYnprdXlmaWxkcW94bGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2OTg3OTIsImV4cCI6MjA5NzI3NDc5Mn0.7IMYYWdNwQJIPw52ShJNNqsmqR208Xn3GN4uIxa-9do";
+
+      // If last member — delete family + planner + members first
+      const isLastMember = (members||[]).filter(m=>m.auth_id).length <= 1;
+      if (isLastMember && family?.id) {
+        await fetch(`${SB_URL}/rest/v1/planner_items?family_id=eq.${family.id}`, { method:"DELETE", headers:{ "apikey":SB_KEY, "Authorization":`Bearer ${SB_KEY}` } });
+        await fetch(`${SB_URL}/rest/v1/members?family_id=eq.${family.id}`, { method:"DELETE", headers:{ "apikey":SB_KEY, "Authorization":`Bearer ${SB_KEY}` } });
+        await fetch(`${SB_URL}/rest/v1/families?id=eq.${family.id}`, { method:"DELETE", headers:{ "apikey":SB_KEY, "Authorization":`Bearer ${SB_KEY}` } });
+      }
+
+      // Call Edge Function to delete auth user + member row + push subs
+      const res = await fetch(`${SB_URL}/functions/v1/delete-account`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${authToken}`, "apikey":SB_KEY },
+        body: JSON.stringify({ familyId: family?.id, memberName: member?.name }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Deletion failed");
+
+      showToast(lang==="hi" ? "अकाउंट डिलीट हो गया। अलविदा! 👋" : "Account deleted. Goodbye! 👋");
+      setTimeout(() => onDeleteAccount(), 1500);
+    } catch(e) { showToast(e.message, "error"); }
+    setDelBusy(false);
+  };
 
   const toggleNotifications = async () => {
     if (!("Notification" in window)) { showToast("Notifications not supported on this browser","error"); return; }
@@ -2622,6 +2729,63 @@ function SettingsView({ member, family, showToast, lang, onLangChange, isHead })
             <div style={{ fontSize:12, color:"#2D6A4F", marginTop:2 }}>✅ Designed by Revive Healthcare</div>
           </div>
         </div>
+      </div>
+
+      {/* DANGER ZONE */}
+      <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#C1440E", textTransform:"uppercase", letterSpacing:.8 }}>
+        {lang==="hi" ? "खतरनाक ज़ोन" : "Danger Zone"}
+      </div>
+      <div className="card" style={{ border:"1px solid #ffdddd", background:"#fffafa", marginBottom:32 }}>
+        {!showDelBox ? (
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <div style={{ fontWeight:600, fontSize:14, color:"#C1440E" }}>🗑️ {t.deleteAccount}</div>
+              <div style={{ fontSize:12, color:"#aaa", marginTop:3 }}>{t.deleteAccountSub}</div>
+            </div>
+            <button
+              onClick={()=>{ setShowDelBox(true); setDelConfirm(""); }}
+              style={{ background:"#C1440E", color:"#fff", border:"none", padding:"9px 16px", borderRadius:10, fontWeight:700, fontSize:13, cursor:"pointer", flexShrink:0 }}>
+              {lang==="hi" ? "डिलीट करें" : "Delete"}
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontWeight:700, fontSize:14, color:"#C1440E", marginBottom:10 }}>
+              ⚠️ {lang==="hi" ? "अंतिम चेतावनी" : "Final Warning"}
+            </div>
+            <div style={{ background:"#fff3f3", border:"1px solid #ffcccc", borderRadius:10, padding:12, marginBottom:14, fontSize:13, color:"#555", lineHeight:1.7 }}>
+              {isHead && (members||[]).filter(m=>m.auth_id && m.id!==member?.id).length > 0
+                ? t.deleteAccountHead
+                : (members||[]).filter(m=>m.auth_id).length <= 1
+                  ? t.deleteAccountLast
+                  : t.deleteAccountWarn}
+            </div>
+            {/* Only show confirm input if not blocked by Head rule */}
+            {!(isHead && (members||[]).filter(m=>m.auth_id && m.id!==member?.id).length > 0) && (
+              <>
+                <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>
+                  {lang==="hi" ? "नीचे DELETE टाइप करें:" : "Type DELETE below to confirm:"}
+                </label>
+                <input
+                  className="input"
+                  value={delConfirm}
+                  onChange={e=>setDelConfirm(e.target.value)}
+                  placeholder="DELETE"
+                  style={{ marginBottom:14, borderColor: delConfirm==="DELETE"?"#C1440E":"#ddd", fontWeight:700, letterSpacing:2 }}
+                />
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={delBusy || delConfirm!=="DELETE"}
+                  style={{ width:"100%", background: delConfirm==="DELETE"?"#C1440E":"#eee", color: delConfirm==="DELETE"?"#fff":"#aaa", border:"none", padding:"12px", borderRadius:10, fontWeight:700, fontSize:15, cursor: delConfirm==="DELETE"?"pointer":"not-allowed", marginBottom:8 }}>
+                  {delBusy ? t.deleting : (lang==="hi" ? "🗑️ अकाउंट हमेशा के लिए डिलीट करें" : "🗑️ Permanently Delete My Account")}
+                </button>
+              </>
+            )}
+            <button onClick={()=>{ setShowDelBox(false); setDelConfirm(""); }} className="btn btn-g" style={{ width:"100%" }}>
+              {lang==="hi" ? "रद्द करें" : "Cancel"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2794,8 +2958,9 @@ function FeedbackView({ member, family, showToast }) {
 }
 
 // ─── FAMILY MANAGEMENT ────────────────────────────────────────────────────────
-function FamilyView({ family, setFamily, members, setMembers, member, showToast, MCOLS, isHead }) {
-  const t = useT();
+function FamilyView({ family, setFamily, members, setMembers, member, showToast, MCOLS, isHead, onLeaveFamily }) {
+  const t    = useT();
+  const lang = useLang();
   const [adding, setAdding] = useState(false);
   const [newM,   setNewM]   = useState({ name:"", email:"" });
   const [busy,   setBusy]   = useState(false);
@@ -2862,6 +3027,52 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
   const renameMember = async (m, name) => {
     try { await sbPatch("members",`id=eq.${m.id}`,{ name, username:name }); setMembers(p=>p.map(x=>x.id===m.id?{...x,name,username:name}:x)); }
     catch(e) { /* silent */ }
+  };
+
+  const leaveFamily = async () => {
+    const isLastMember = members.length === 1;
+    const isOnlyHead   = isHead && members.filter(m2 => m2.auth_id).length > 1;
+
+    // Head with other members — must transfer first
+    if (isHead && !isLastMember) {
+      showToast(lang==="hi" ? t.leaveFamilyHead : t.leaveFamilyHead, "error");
+      return;
+    }
+
+    // Last member — confirm delete entire family
+    const confirmMsg = isLastMember
+      ? (lang==="hi" ? t.leaveFamilyLast + "
+
+" + t.leaveFamilyLastConfirm : t.leaveFamilyLast + "
+
+" + t.leaveFamilyLastConfirm)
+      : (lang==="hi" ? t.leaveFamilyConfirm + "
+
+" + t.leaveFamilyWarn : t.leaveFamilyConfirm + "
+
+" + t.leaveFamilyWarn);
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setBusy(true);
+    try {
+      if (isLastMember) {
+        // Delete all planner items for this family
+        await sbDel("planner_items", `family_id=eq.${family.id}`);
+        // Delete all members
+        await sbDel("members", `family_id=eq.${family.id}`);
+        // Delete the family itself
+        await sbDel("families", `id=eq.${family.id}`);
+      } else {
+        // Just remove this member
+        await sbDel("members", `id=eq.${member.id}`);
+        // Remove their planner items
+        await sbDel("planner_items", `family_id=eq.${family.id}&member_name=eq.${encodeURIComponent(member.name)}`);
+      }
+      showToast(lang==="hi" ? "परिवार छोड़ दिया। अलविदा! 👋" : "You have left the family. Goodbye! 👋");
+      setTimeout(() => onLeaveFamily(), 1200);
+    } catch(e) { showToast(e.message, "error"); }
+    setBusy(false);
   };
 
   const resendInvite = (m) => {
@@ -2971,10 +3182,9 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
                       href={`https://wa.me/?text=${encodeURIComponent(`Hi ${m.name}! You have been invited to join our Family Kitchen meal planner 👨‍👩‍👧‍👦
 
 Tap this link to join:
-https://family-kitchen-gamma-rust.vercel.app?invite=true
+https://family-kitchen-gamma-rust.vercel.app?invite=true&email=${encodeURIComponent(m.email||"")}
 
-When it opens, enter this email: ${m.email}
-Then tap "Send Joining Link" — done!
+Your email is already pre-filled — just tap "Send me a link to set my password" and check your inbox!
 
 (Family: ${family.name})`)}`}
                       target="_blank"
