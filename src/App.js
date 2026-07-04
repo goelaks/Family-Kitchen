@@ -2076,35 +2076,29 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
   const displayName = (englishName) => (lang==="hi" && nameHi[englishName]) ? nameHi[englishName] : englishName;
 
   const printMenu = () => {
-    const finalItems = planner.filter(p=>p.finalized);
-    const isHindi = lang === "hi";
+    const finalItems    = planner.filter(p=>p.finalized);
+    const isHindi       = lang === "hi";
+    // Declare BEFORE use
+    const mealColClass  = {"Breakfast":"meal-col-0","Lunch":"meal-col-1","Evening Snack":"meal-col-2","Dinner":"meal-col-3"};
+    const mealCellClass = {"Breakfast":"meal-cell-0","Lunch":"meal-cell-1","Evening Snack":"meal-cell-2","Dinner":"meal-cell-3"};
+    const mealIcons     = {"Breakfast":"🌅","Lunch":"☀️","Evening Snack":"🍵","Dinner":"🌙"};
 
-    // Build table rows — one per day, translated
+    const mealHeaders = meals.map(m =>
+      `<th class="meal-col ${mealColClass[m]||'meal-col-1'}">${mealIcons[m]||""} ${isHindi?(t.mealShort[m]||m):m}</th>`
+    ).join("");
+
     const rows = days.map(day => {
       const cols = meals.map(meal => {
         const items = finalItems.filter(p=>p.day===day && p.meal===meal);
         if (!items.length) return `<td class="meal-cell ${mealCellClass[meal]||''} empty">—</td>`;
-        const names = [...new Set(items.map(i => {
-          const emoji = i.food_emoji||"";
-          return `${emoji} ${displayName(i.food_name)}`;
-        }))].join("<br/>");
+        const names = [...new Set(items.map(i => `${i.food_emoji||""} ${displayName(i.food_name)}` ))].join("<br/>");
         return `<td class="meal-cell ${mealCellClass[meal]||''}">${names}</td>`;
       }).join("");
       const isTodayRow = day === new Date().toLocaleDateString("en",{weekday:"long"});
-      const dayLbl = isHindi ? (t.days[day]||day) : day;
+      const dayLbl     = isHindi ? (t.days[day]||day) : day;
       const todayBadge = isTodayRow ? `<span class="today-badge">${isHindi?"आज":"TODAY"}</span>` : "";
-      return `<tr>
-        <td class="day-cell${isTodayRow?" today":""}">${dayLbl}${todayBadge}</td>
-        ${cols}
-      </tr>`;
+      return `<tr><td class="day-cell${isTodayRow?" today":""}">${dayLbl}${todayBadge}</td>${cols}</tr>`;
     }).join("");
-
-    const mealColClass = {"Breakfast":"meal-col-0","Lunch":"meal-col-1","Evening Snack":"meal-col-2","Dinner":"meal-col-3"};
-    const mealCellClass = {"Breakfast":"meal-cell-0","Lunch":"meal-cell-1","Evening Snack":"meal-cell-2","Dinner":"meal-cell-3"};
-    const mealIcons = {"Breakfast":"🌅","Lunch":"☀️","Evening Snack":"🍵","Dinner":"🌙"};
-    const mealHeaders = meals.map((m,idx) =>
-      `<th class="meal-col ${mealColClass[m]||'meal-col-1'}">${mealIcons[m]||""} ${isHindi?(t.mealShort[m]||m):m}</th>`
-    ).join("");
 
     const title    = isHindi ? "फैमिली किचन — साप्ताहिक मेनू" : "Family Kitchen — Weekly Menu";
     const dayLabel = isHindi ? "दिन" : "Day";
@@ -2115,14 +2109,6 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
     const footer   = isHindi
       ? `फैमिली किचन · Revive Healthcare द्वारा डिज़ाइन · ${new Date().getFullYear()}`
       : `Family Kitchen · Designed by Revive Healthcare · ${new Date().getFullYear()}`;
-
-    // Meal colors for columns
-    const mealColors = {
-      "Breakfast":"#FFF8E1", "Lunch":"#E8F5E9", "Evening Snack":"#FFF3E0", "Dinner":"#EDE7F6"
-    };
-    const mealAccents = {
-      "Breakfast":"#F4A200", "Lunch":"#2D6A4F", "Evening Snack":"#E65100", "Dinner":"#6B5CE7"
-    };
 
     const w = window.open("","_blank");
     w.document.write(`<!DOCTYPE html>
