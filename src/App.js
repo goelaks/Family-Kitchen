@@ -726,7 +726,7 @@ export default function App() {
         setScreen("app");
         showToast(`Welcome, ${mem.name}! 🎉`);
         // Save session for 48 hours (remember me)
-        const expiresAt = Date.now() + 48 * 60 * 60 * 1000;
+        const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
         localStorage.setItem("fk_session", JSON.stringify({ token, sbUser, member:mem, expiresAt }));
         // Request push permission after a short delay so UI is ready
         setTimeout(() => initPush(mem.id), 2000);
@@ -1347,7 +1347,7 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
                     <div key={item.id} style={{ display:"flex", alignItems:"center", gap:5, background:item.finalized?"#e8f5e9":"#f5f5f5", border:`1px solid ${item.finalized?"#c8e6c9":"#eee"}`, borderRadius:20, padding:"4px 10px", fontSize:12 }}>
                       <span>{item.food_emoji} {displayName(item.food_name)}</span>
                       <span style={{ color:"#aaa", fontSize:10 }}>— {item.member_name}</span>
-                      {(isHead || item.member_name===member?.name) && (
+                      {item.member_name===member?.name && (
                         <button onClick={e=>{e.stopPropagation();onRemove(item.id);}} style={{ background:"none", border:"none", cursor:"pointer", color:"#ffaaaa", fontSize:14, padding:"0 2px", lineHeight:1 }}>×</button>
                       )}
                     </div>
@@ -1635,7 +1635,7 @@ function MealView({ day, meal, foods, member, onBack, onAdd, getMealSummary, get
           {currentItems.map(item=>(
             <div key={item.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:"1px solid #f5f0e8" }}>
               <span style={{ fontSize:13 }}>{item.food_emoji} <b>{item.food_name}</b> <span style={{ color:"#aaa", fontSize:11 }}>— {item.member_name}</span>{item.finalized&&<span style={{ color:"#2D6A4F", fontSize:11 }}> ✓</span>}</span>
-              {(isHead || item.member_name===member?.name) && <button onClick={e=>{e.stopPropagation();onRemove(item.id);}} style={{ background:"none", border:"none", cursor:"pointer", color:"#ffaaaa", fontSize:16, padding:"0 4px" }}>✕</button>}
+              {item.member_name===member?.name && <button onClick={e=>{e.stopPropagation();onRemove(item.id);}} style={{ background:"none", border:"none", cursor:"pointer", color:"#ffaaaa", fontSize:16, padding:"0 4px" }}>✕</button>}
             </div>
           ))}
         </div>
