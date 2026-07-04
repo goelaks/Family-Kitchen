@@ -1034,30 +1034,6 @@ function InvitePopup({ show, onClose, showToast, initialEmail="" }) {
         )}
       </div>
 
-      {/* ── Leave Family ─────────────────────────────────────────── */}
-      <div style={{ marginTop:24 }}>
-        <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#aaa", textTransform:"uppercase", letterSpacing:.8 }}>
-          {lang==="hi" ? "खतरनाक ज़ोन" : "Danger Zone"}
-        </div>
-        <div className="card" style={{ border:"1px solid #ffdddd", background:"#fffafa" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <div>
-              <div style={{ fontWeight:600, fontSize:14, color:"#C1440E" }}>🚪 {t.leaveFamily}</div>
-              <div style={{ fontSize:12, color:"#aaa", marginTop:3 }}>
-                {isHead && members.filter(m2=>m2.auth_id).length > 1
-                  ? (lang==="hi" ? "पहले किसी और को हेड बनाएं" : "Transfer Head role first")
-                  : (lang==="hi" ? "आपका डेटा हटा दिया जाएगा" : "Your data will be removed")}
-              </div>
-            </div>
-            <button
-              onClick={leaveFamily}
-              disabled={busy}
-              style={{ background:"#C1440E", color:"#fff", border:"none", padding:"9px 18px", borderRadius:10, fontWeight:700, fontSize:13, cursor:busy?"not-allowed":"pointer", opacity:busy?.6:1, flexShrink:0 }}>
-              {busy ? "..." : (lang==="hi" ? t.leaveFamily : t.leaveFamily)}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -3226,6 +3202,31 @@ Your email is already pre-filled — just tap "Send me a link to set my password
             </button>
           )
         )}
+      </div>
+
+      {/* ── Leave Family — Danger Zone ──────────────────────────── */}
+      <div style={{ marginTop:24 }}>
+        <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#C1440E", textTransform:"uppercase", letterSpacing:.8 }}>
+          {lang==="hi" ? "खतरनाक ज़ोन" : "Danger Zone"}
+        </div>
+        <div className="card" style={{ border:"1px solid #ffdddd", background:"#fffafa" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <div style={{ fontWeight:600, fontSize:14, color:"#C1440E" }}>🚪 {t.leaveFamily}</div>
+              <div style={{ fontSize:12, color:"#aaa", marginTop:3 }}>
+                {isHead && members.filter(m2=>m2.auth_id).length > 1
+                  ? (lang==="hi" ? "पहले किसी और को हेड बनाएं" : "Transfer Head role first")
+                  : (lang==="hi" ? "आपका डेटा हटा दिया जाएगा" : "Your data will be removed")}
+              </div>
+            </div>
+            <button
+              onClick={leaveFamily}
+              disabled={busy}
+              style={{ background:"#C1440E", color:"#fff", border:"none", padding:"9px 18px", borderRadius:10, fontWeight:700, fontSize:13, cursor:busy?"not-allowed":"pointer", opacity:busy?0.6:1, flexShrink:0 }}>
+              {busy ? "..." : t.leaveFamily}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
