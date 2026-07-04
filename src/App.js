@@ -970,7 +970,16 @@ function InvitePopup({ show, onClose, showToast, initialEmail="" }) {
         showToast("This email has not been invited yet. Ask your Kitchen Head to add you first.","error");
         setBusy(false); return;
       }
-      await sbSendResetEmail(em);
+      // Use our Edge Function which sends via Hostinger SMTP (reliable delivery)
+      const SB_URL = "https://fxaqbbzkuyfildqoxlfh.supabase.co";
+      const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4YXFiYnprdXlmaWxkcW94bGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2OTg3OTIsImV4cCI6MjA5NzI3NDc5Mn0.7IMYYWdNwQJIPw52ShJNNqsmqR208Xn3GN4uIxa-9do";
+      const inviteRes = await fetch(`${SB_URL}/functions/v1/send-invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SB_KEY}`, "apikey": SB_KEY },
+        body: JSON.stringify({ email: em, memberName: em.split("@")[0] })
+      });
+      const inviteData = await inviteRes.json();
+      if (!inviteRes.ok || inviteData.error) throw new Error(inviteData.error || "Failed to send invite email");
       setSent(true);
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
@@ -1185,7 +1194,15 @@ function LoginScreen({ onLogin, showToast, autoInvite, autoInviteEmail="", onAut
     if (!fpEmail.trim()) { showToast("Please enter your email","error"); return; }
     setBusy(true);
     try {
-      await sbSendResetEmail(fpEmail.trim().toLowerCase());
+      const _SB_URL = "https://fxaqbbzkuyfildqoxlfh.supabase.co";
+      const _SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4YXFiYnprdXlmaWxkcW94bGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2OTg3OTIsImV4cCI6MjA5NzI3NDc5Mn0.7IMYYWdNwQJIPw52ShJNNqsmqR208Xn3GN4uIxa-9do";
+      const r = await fetch(`${_SB_URL}/functions/v1/send-invite`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${_SB_KEY}`, "apikey":_SB_KEY },
+        body: JSON.stringify({ email: fpEmail.trim().toLowerCase() })
+      });
+      const d = await r.json();
+      if (!r.ok || d.error) throw new Error(d.error || "Failed to send");
       showToast("Reset link sent! Check your inbox 📧");
       setStep("sent");
     } catch(e) { showToast(e.message,"error"); }
