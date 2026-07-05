@@ -809,7 +809,7 @@ export default function App() {
         <div style={{ display:"flex", flex:1 }}>
           {/* SIDEBAR */}
           <aside className="sidebar" style={{ width:185, background:"#fff", borderRight:"1px solid #ede5d8", padding:"14px 10px", display:"flex", flexDirection:"column", gap:3, position:"sticky", top:60, height:"calc(100vh - 60px)", overflowY:"auto" }}>
-            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family]].map(([v,ic,lb])=>(
+            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["family","👥",t.family]].map(([v,ic,lb])=>(
               <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)}>{ic} {lb}</button>
             ))}
             {isHead && (
@@ -818,6 +818,7 @@ export default function App() {
                 <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>navigate(()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "finalize")}>✅ {t.finalizeMenu}</button>
               </>
             )}
+            <button className={`nav-btn ${view==="shopping"?"act":""}`} onClick={()=>navigate(()=>{ setView("shopping"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "shopping")}>🛒 {t.shopping}</button>
             <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
             <button className={`nav-btn ${view==="settings"?"act":""}`} onClick={()=>navigate(()=>{ setView("settings"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "settings")}>⚙️ {lang==="hi"?"सेटिंग्स":"Settings"}</button>
             <div style={{ flex:1 }} />
@@ -855,7 +856,7 @@ export default function App() {
 
         {/* BOTTOM NAV (mobile) */}
         <nav className="bnav" style={{ display:"none", position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ede5d8", padding:"6px 8px", justifyContent:"space-around", zIndex:100 }}>
-          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["shopping","🛒",t.shopping],["family","👥",t.family],...(isHead?[["finalize","✅",t.finalizeMenu]]:[]),["settings","⚙️",lang==="hi"?"सेटिंग्स":"Settings"]].map(([v,ic,lb])=>(
+          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["family","👥",t.family],...(isHead?[["finalize","✅",t.finalizeMenu]]:[]),["shopping","🛒",t.shopping],["settings","⚙️",lang==="hi"?"सेटिंग्स":"Settings"]].map(([v,ic,lb])=>(
             <button key={v} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
               <span style={{ fontSize:18 }}>{ic}</span>
               <span style={{ fontSize:10, color:view===v?"#F4A200":"#999", fontWeight:500 }}>{lb}</span>
