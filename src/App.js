@@ -889,21 +889,23 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.msg||d.error_description||"Failed to update password");
 
-      // Get the user email from the recovery token
+      // Link auth account to pending member slot if they were invited
       const userEmail = d.email;
-
-      // Check if this email has a pending member slot (invited member)
-      if (userEmail) {
-        const mems = await sbGet("members", `email=eq.${encodeURIComponent(userEmail)}&select=*`);
-        if (mems?.length && !mems[0].auth_id) {
-          // Link their auth account to the pending member slot
-          await sbPatch("members", `id=eq.${mems[0].id}`, { auth_id: d.id || mems[0].id });
-        }
+      const userId    = d.id;
+      if (userEmail && userId) {
+        try {
+          const mems = await sbGet("members", `email=eq.${encodeURIComponent(userEmail)}&select=*`);
+          if (mems?.length && !mems[0].auth_id) {
+            await sbPatch("members", `id=eq.${mems[0].id}`, { auth_id: userId });
+          }
+        } catch(_) { /* non-critical — user can still log in */ }
       }
 
       setDone(true);
-      showToast("Password set! Please sign in now.","success");
-      setTimeout(() => onDone(), 2000);
+      showToast("Password set! Please sign in with your new password. ✅");
+      // Clear the URL hash so the recovery token isn't re-detected on reload
+      window.history.replaceState(null, "", window.location.pathname);
+      setTimeout(() => onDone(), 2500);
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
