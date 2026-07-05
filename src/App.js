@@ -3061,10 +3061,22 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
     setBusy(false);
   };
 
-  const resendInvite = (m) => {
+  const resendInvite = async (m) => {
     if (!m.email) { showToast("No email address for this member","error"); return; }
-    setInviteEmail(m.email);
-    setShowInvitePop(true);
+    setBusy(true);
+    try {
+      const _SB_URL = "https://fxaqbbzkuyfildqoxlfh.supabase.co";
+      const _SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4YXFiYnprdXlmaWxkcW94bGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2OTg3OTIsImV4cCI6MjA5NzI3NDc5Mn0.7IMYYWdNwQJIPw52ShJNNqsmqR208Xn3GN4uIxa-9do";
+      const res = await fetch(`${_SB_URL}/functions/v1/send-invite`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":`Bearer ${_SB_KEY}`, "apikey":_SB_KEY },
+        body: JSON.stringify({ email: m.email, memberName: m.name, familyName: family?.name, headName: member?.name })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to send");
+      showToast(`Invite sent to ${m.name} (${m.email}) 📧`);
+    } catch(e) { showToast(e.message,"error"); }
+    setBusy(false);
   };
 
   return (
