@@ -1,3 +1,4 @@
+// Family Kitchen v2.1 — 2026-07-05 03:35
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
 // ─── SUPABASE CONFIG ────────────────────────────────────────────────────────
