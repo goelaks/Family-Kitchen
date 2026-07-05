@@ -809,7 +809,7 @@ export default function App() {
         <div style={{ display:"flex", flex:1 }}>
           {/* SIDEBAR */}
           <aside className="sidebar" style={{ width:185, background:"#fff", borderRight:"1px solid #ede5d8", padding:"14px 10px", display:"flex", flexDirection:"column", gap:3, position:"sticky", top:60, height:"calc(100vh - 60px)", overflowY:"auto" }}>
-            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["family","👥",t.family]].map(([v,ic,lb])=>(
+            {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase]].map(([v,ic,lb])=>(
               <button key={v} className={`nav-btn ${view===v?"act":""}`} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)}>{ic} {lb}</button>
             ))}
             {isHead && (
@@ -820,6 +820,7 @@ export default function App() {
             )}
             <button className={`nav-btn ${view==="shopping"?"act":""}`} onClick={()=>navigate(()=>{ setView("shopping"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "shopping")}>🛒 {t.shopping}</button>
             <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
+            <button className={`nav-btn ${view==="family"?"act":""}`} onClick={()=>navigate(()=>{ setView("family"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "family")}>👥 {t.family}</button>
             <button className={`nav-btn ${view==="settings"?"act":""}`} onClick={()=>navigate(()=>{ setView("settings"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "settings")}>⚙️ {lang==="hi"?"सेटिंग्स":"Settings"}</button>
             <div style={{ flex:1 }} />
             <div style={{ padding:"10px 8px", background:"#fff8f0", borderRadius:10, fontSize:11, color:"#a87800" }}>
@@ -856,7 +857,7 @@ export default function App() {
 
         {/* BOTTOM NAV (mobile) */}
         <nav className="bnav" style={{ display:"none", position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ede5d8", padding:"6px 8px", justifyContent:"space-around", zIndex:100 }}>
-          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],["family","👥",t.family],...(isHead?[["finalize","✅",t.finalizeMenu]]:[]),["shopping","🛒",t.shopping],["settings","⚙️",lang==="hi"?"सेटिंग्स":"Settings"]].map(([v,ic,lb])=>(
+          {[["dashboard","📅",t.dashboard],["foods","🍱",t.foodDatabase],...(isHead?[["finalize","✅",t.finalizeMenu]]:[]),["shopping","🛒",t.shopping],["family","👥",t.family],["settings","⚙️",lang==="hi"?"सेटिंग्स":"Settings"]].map(([v,ic,lb])=>(
             <button key={v} onClick={()=>navigate(()=>{ setView(v); setSelDay(null); setSelMeal(null); setSelMealView(null); }, v)} style={{ background:view===v?"#fff8e1":"none", border:"none", cursor:"pointer", padding:"7px 10px", borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", gap:2, flex:1 }}>
               <span style={{ fontSize:18 }}>{ic}</span>
               <span style={{ fontSize:10, color:view===v?"#F4A200":"#999", fontWeight:500 }}>{lb}</span>
@@ -871,17 +872,25 @@ export default function App() {
 
 // ─── RESET PASSWORD SCREEN (after Supabase magic link redirect) ─────────────
 function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
-  const [newPw,    setNewPw]    = useState("");
-  const [confirm,  setConfirm]  = useState("");
-  const [busy,     setBusy]     = useState(false);
-  const [done,     setDone]     = useState(false);
+  const [newPw,   setNewPw]   = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy,    setBusy]    = useState(false);
+  const [done,    setDone]    = useState(false);
+  const [counter, setCounter] = useState(5);
+
+  // Countdown timer after success
+  React.useEffect(() => {
+    if (!done) return;
+    if (counter <= 0) { onDone(); return; }
+    const t = setTimeout(() => setCounter(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [done, counter]); // eslint-disable-line
 
   const handleReset = async () => {
-    if (newPw.length < 6)   { showToast("Password must be at least 6 characters","error"); return; }
-    if (newPw !== confirm)   { showToast("Passwords do not match","error"); return; }
+    if (newPw.length < 6) { showToast("Password must be at least 6 characters","error"); return; }
+    if (newPw !== confirm) { showToast("Passwords do not match","error"); return; }
     setBusy(true);
     try {
-      // Update the password using the recovery token
       const res = await fetch(`${SB_URL}/auth/v1/user`, {
         method:"PUT",
         headers:{ ...H, Authorization:`Bearer ${recoveryToken}` },
@@ -890,23 +899,19 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.msg||d.error_description||"Failed to update password");
 
-      // Link auth account to pending member slot if they were invited
-      const userEmail = d.email;
-      const userId    = d.id;
-      if (userEmail && userId) {
-        try {
-          const mems = await sbGet("members", `email=eq.${encodeURIComponent(userEmail)}&select=*`);
+      // Link auth_id to pending member row if this was an invite
+      try {
+        if (d.email && d.id) {
+          const mems = await sbGet("members", `email=eq.${encodeURIComponent(d.email)}&select=*`);
           if (mems?.length && !mems[0].auth_id) {
-            await sbPatch("members", `id=eq.${mems[0].id}`, { auth_id: userId });
+            await sbPatch("members", `id=eq.${mems[0].id}`, { auth_id: d.id });
           }
-        } catch(_) { /* non-critical — user can still log in */ }
-      }
+        }
+      } catch(_) {}
 
-      setDone(true);
-      showToast("Password set! Please sign in with your new password. ✅");
-      // Clear the URL hash so the recovery token isn't re-detected on reload
+      // Clear hash BEFORE setting done to prevent re-detection
       window.history.replaceState(null, "", window.location.pathname);
-      setTimeout(() => onDone(), 2500);
+      setDone(true);
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
@@ -914,40 +919,55 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
   return (
     <div style={{ minHeight:"100vh", background:"linear-gradient(150deg,#FFF8F0,#FFF0CC 60%,#FFF8F0)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ width:"100%", maxWidth:420 }}>
-        <div style={{ textAlign:"center", marginBottom:28 }}>
-          <div style={{ fontSize:64 }}>🔒</div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, color:"#1A1A2E", marginTop:10 }}>Set Your Password</h1>
-          <p style={{ color:"#999", fontSize:13, marginTop:6 }}>Choose a password to access your Family Kitchen account</p>
-        </div>
-        <div style={{ background:"#fff", borderRadius:20, padding:28, border:"1px solid #ede5d8" }}>
-          {done ? (
-            <div style={{ textAlign:"center", padding:20 }}>
-              <div style={{ fontSize:52 }}>✅</div>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:20, marginTop:12, color:"#2D6A4F" }}>Password Set!</div>
-              <p style={{ color:"#888", fontSize:13, marginTop:8 }}>Redirecting you to sign in...</p>
+
+        {done ? (
+          /* ── Success Screen ── */
+          <div style={{ background:"#fff", borderRadius:24, padding:36, border:"1px solid #ede5d8", textAlign:"center", boxShadow:"0 8px 40px rgba(0,0,0,.08)" }}>
+            <div style={{ fontSize:72, marginBottom:8 }}>🎉</div>
+            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, color:"#1A1A2E", margin:"0 0 10px" }}>Password Set!</h2>
+            <p style={{ fontSize:14, color:"#555", lineHeight:1.7, marginBottom:24 }}>
+              Your password has been set successfully.<br/>You can now sign in to Family Kitchen.
+            </p>
+            {/* Countdown */}
+            <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:"12px 20px", marginBottom:20 }}>
+              <p style={{ fontSize:13, color:"#2D6A4F", margin:0 }}>
+                Redirecting to sign in in <b>{counter}s</b>...
+              </p>
             </div>
-          ) : (
-            <>
+            <button
+              onClick={onDone}
+              style={{ width:"100%", background:"#F4A200", color:"#fff", border:"none", padding:14, borderRadius:12, fontWeight:700, fontSize:16, cursor:"pointer" }}>
+              Sign In Now →
+            </button>
+          </div>
+        ) : (
+          /* ── Password Form ── */
+          <>
+            <div style={{ textAlign:"center", marginBottom:28 }}>
+              <div style={{ fontSize:64 }}>🔒</div>
+              <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, color:"#1A1A2E", marginTop:10 }}>Set Your Password</h1>
+              <p style={{ color:"#999", fontSize:13, marginTop:6 }}>Choose a password to access your Family Kitchen account</p>
+            </div>
+            <div style={{ background:"#fff", borderRadius:20, padding:28, border:"1px solid #ede5d8" }}>
               <div style={{ marginBottom:16 }}>
                 <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>New Password</label>
-                <PwInput value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Choose a password (min. 6 characters)" autoComplete="new-password" />
+                <PwInput value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
               </div>
               <div style={{ marginBottom:22 }}>
                 <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:6 }}>Confirm Password</label>
-                <PwInput value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" />
+                <PwInput value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Re-enter password" autoComplete="new-password"
+                  onKeyDown={e=>e.key==="Enter"&&handleReset()} />
               </div>
-              <button
-                onClick={handleReset}
-                disabled={busy}
+              <button onClick={handleReset} disabled={busy}
                 style={{ width:"100%", background:"#F4A200", color:"#fff", border:"none", padding:14, borderRadius:12, fontWeight:700, fontSize:16, cursor:busy?"not-allowed":"pointer", opacity:busy?0.7:1 }}>
-                {busy ? t.updating : "Set My Password →"}
+                {busy ? "Setting password..." : "Set My Password →"}
               </button>
-            </>
-          )}
-        </div>
-        <div style={{ marginTop:14, background:"rgba(45,106,79,.08)", borderRadius:12, padding:"9px 14px", textAlign:"center" }}>
-          <p style={{ fontSize:12, color:"#2D6A4F" }}>✅ Live — Designed by Revive Healthcare</p>
-        </div>
+            </div>
+            <div style={{ marginTop:14, background:"rgba(45,106,79,.08)", borderRadius:12, padding:"9px 14px", textAlign:"center" }}>
+              <p style={{ fontSize:12, color:"#2D6A4F" }}>✅ Live — Designed by Revive Healthcare</p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -2617,6 +2637,28 @@ function SettingsView({ member, family, showToast, lang, onLangChange, isHead, m
 
   const appVersion = "1.0.0";
   const [delBusy,    setDelBusy]    = useState(false);
+  const [showChPw,   setShowChPw]   = useState(false);
+  const [chPwNew,    setChPwNew]    = useState("");
+  const [chPwConf,   setChPwConf]   = useState("");
+  const [chPwBusy,   setChPwBusy]   = useState(false);
+
+  const handleChangePw = async () => {
+    if (chPwNew.length < 6) { showToast(lang==="hi" ? "पासवर्ड कम से कम 6 अक्षर का होना चाहिए" : "Password must be at least 6 characters","error"); return; }
+    if (chPwNew !== chPwConf) { showToast(lang==="hi" ? "पासवर्ड मेल नहीं खाते" : "Passwords do not match","error"); return; }
+    setChPwBusy(true);
+    try {
+      const res = await fetch(`${SB_URL}/auth/v1/user`, {
+        method:"PUT",
+        headers:{ ...H, Authorization:`Bearer ${authToken}` },
+        body: JSON.stringify({ password: chPwNew })
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.msg||d.error_description||"Failed to update password");
+      showToast(lang==="hi" ? "पासवर्ड बदल गया! ✅" : "Password changed successfully! ✅");
+      setShowChPw(false); setChPwNew(""); setChPwConf("");
+    } catch(e) { showToast(e.message,"error"); }
+    setChPwBusy(false);
+  };
   const [showDelBox, setShowDelBox] = useState(false);
   const [delConfirm, setDelConfirm] = useState("");
 
@@ -2754,6 +2796,37 @@ function SettingsView({ member, family, showToast, lang, onLangChange, isHead, m
             <span style={{ fontWeight:600, color:"#555", fontFamily:k==="Family ID"?"monospace":"inherit", fontSize:k==="Family ID"?12:13 }}>{v}</span>
           </div>
         ))}
+        {/* Change Password */}
+        {!showChPw ? (
+          <button onClick={()=>setShowChPw(true)}
+            style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", background:"none", border:"none", cursor:"pointer", marginTop:4 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <span style={{ fontSize:22 }}>🔑</span>
+              <div style={{ textAlign:"left" }}>
+                <div style={{ fontWeight:600, fontSize:14, color:"#1A1A2E" }}>{lang==="hi" ? "पासवर्ड बदलें" : "Change Password"}</div>
+                <div style={{ fontSize:12, color:"#aaa" }}>{lang==="hi" ? "नया पासवर्ड सेट करें" : "Set a new password for your account"}</div>
+              </div>
+            </div>
+            <span style={{ color:"#F4A200", fontSize:20 }}>›</span>
+          </button>
+        ) : (
+          <div style={{ paddingTop:12 }}>
+            <div style={{ fontWeight:600, fontSize:14, color:"#1A1A2E", marginBottom:12 }}>🔑 {lang==="hi" ? "नया पासवर्ड" : "Change Password"}</div>
+            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>{lang==="hi" ? "नया पासवर्ड" : "New Password"}</label>
+            <PwInput value={chPwNew} onChange={e=>setChPwNew(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" style={{ marginBottom:10 }} />
+            <label style={{ fontSize:12, color:"#888", display:"block", marginBottom:5 }}>{lang==="hi" ? "पासवर्ड दोबारा दर्ज करें" : "Confirm Password"}</label>
+            <PwInput value={chPwConf} onChange={e=>setChPwConf(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" style={{ marginBottom:14 }} />
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={handleChangePw} disabled={chPwBusy}
+                style={{ flex:1, background:"#F4A200", color:"#fff", border:"none", padding:"11px", borderRadius:10, fontWeight:700, fontSize:14, cursor:chPwBusy?"not-allowed":"pointer", opacity:chPwBusy?0.7:1 }}>
+                {chPwBusy ? "..." : (lang==="hi" ? "सेव करें" : "Save Password")}
+              </button>
+              <button onClick={()=>{ setShowChPw(false); setChPwNew(""); setChPwConf(""); }} className="btn btn-g" style={{ flex:0.6 }}>
+                {lang==="hi" ? "रद्द करें" : "Cancel"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* FEEDBACK */}
@@ -2772,17 +2845,7 @@ function SettingsView({ member, family, showToast, lang, onLangChange, isHead, m
           </div>
           <span style={{ color:"#F4A200", fontSize:20 }}>›</span>
         </button>
-        <a href="mailto:admin@revivehealthcare.co.in"
-          style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", textDecoration:"none" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <span style={{ fontSize:22 }}>📧</span>
-            <div>
-              <div style={{ fontWeight:600, fontSize:14, color:"#1A1A2E" }}>{lang==="hi" ? "सीधे ईमेल करें" : "Email Us Directly"}</div>
-              <div style={{ fontSize:12, color:"#aaa" }}>admin@revivehealthcare.co.in</div>
-            </div>
-          </div>
-          <span style={{ color:"#F4A200", fontSize:20 }}>›</span>
-        </a>
+
       </div>
 
       {/* ABOUT */}
