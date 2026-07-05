@@ -816,10 +816,10 @@ export default function App() {
               <>
                 <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
                 <button className={`nav-btn ${view==="finalize"?"act":""}`} onClick={()=>navigate(()=>{ setView("finalize"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "finalize")}>✅ {t.finalizeMenu}</button>
-                <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
-                <button className={`nav-btn ${view==="settings"?"act":""}`} onClick={()=>navigate(()=>{ setView("settings"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "settings")}>⚙️ {lang==="hi"?"सेटिंग्स":"Settings"}</button>
               </>
             )}
+            <div style={{ borderTop:"1px dashed #ede5d8", margin:"8px 0" }} />
+            <button className={`nav-btn ${view==="settings"?"act":""}`} onClick={()=>navigate(()=>{ setView("settings"); setSelDay(null); setSelMeal(null); setSelMealView(null); }, "settings")}>⚙️ {lang==="hi"?"सेटिंग्स":"Settings"}</button>
             <div style={{ flex:1 }} />
             <div style={{ padding:"10px 8px", background:"#fff8f0", borderRadius:10, fontSize:11, color:"#a87800" }}>
               <div style={{ fontWeight:700 }}>Family ID</div>
@@ -889,21 +889,23 @@ function ResetPasswordScreen({ recoveryToken, onDone, showToast }) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.msg||d.error_description||"Failed to update password");
 
-      // Get the user email from the recovery token
+      // Link auth account to pending member slot if they were invited
       const userEmail = d.email;
-
-      // Check if this email has a pending member slot (invited member)
-      if (userEmail) {
-        const mems = await sbGet("members", `email=eq.${encodeURIComponent(userEmail)}&select=*`);
-        if (mems?.length && !mems[0].auth_id) {
-          // Link their auth account to the pending member slot
-          await sbPatch("members", `id=eq.${mems[0].id}`, { auth_id: d.id || mems[0].id });
-        }
+      const userId    = d.id;
+      if (userEmail && userId) {
+        try {
+          const mems = await sbGet("members", `email=eq.${encodeURIComponent(userEmail)}&select=*`);
+          if (mems?.length && !mems[0].auth_id) {
+            await sbPatch("members", `id=eq.${mems[0].id}`, { auth_id: userId });
+          }
+        } catch(_) { /* non-critical — user can still log in */ }
       }
 
       setDone(true);
-      showToast("Password set! Please sign in now.","success");
-      setTimeout(() => onDone(), 2000);
+      showToast("Password set! Please sign in with your new password. ✅");
+      // Clear the URL hash so the recovery token isn't re-detected on reload
+      window.history.replaceState(null, "", window.location.pathname);
+      setTimeout(() => onDone(), 2500);
     } catch(e) { showToast(e.message,"error"); }
     setBusy(false);
   };
@@ -1776,6 +1778,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
   const [aiInput,      setAiInput]     = useState("");
   const [aiBusy,       setAiBusy]      = useState(false);
   const [aiPreview,    setAiPreview]   = useState([]);
+  const [previewFood,  setPreviewFood] = useState(null);
   const fileRef  = React.useRef();
   const csvRef   = React.useRef();
   const searchRef= React.useRef();
@@ -1928,6 +1931,77 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
 
   return (
     <div>
+      {/* ── Food Preview Modal ───────────────────────────── */}
+      {previewFood && (
+        <div onClick={()=>setPreviewFood(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", zIndex:9000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div onClick={e=>e.stopPropagation()} style={{ background:"#fff", borderRadius:20, width:"100%", maxWidth:480, maxHeight:"90vh", overflowY:"auto", position:"relative" }}>
+            {/* Hero */}
+            <div style={{ width:"100%", height:200, background:"linear-gradient(135deg,#FFF8F0,#FFF0CC)", borderRadius:"20px 20px 0 0", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+              {previewFood.photo_url
+                ? <img src={previewFood.photo_url} alt={previewFood.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                : <span style={{ fontSize:80 }}>{previewFood.emoji||"🍽️"}</span>}
+              <button onClick={()=>setPreviewFood(null)} style={{ position:"absolute", top:12, right:12, background:"rgba(0,0,0,.4)", border:"none", borderRadius:"50%", width:32, height:32, color:"#fff", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
+            </div>
+            <div style={{ padding:20 }}>
+              {/* Name */}
+              <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, color:"#1A1A2E", margin:"0 0 4px" }}>{(lang==="hi"&&previewFood.name_hi)||previewFood.name}</h2>
+              {lang==="hi" && previewFood.name_hi && <p style={{ fontSize:13, color:"#aaa", margin:"0 0 8px" }}>{previewFood.name}</p>}
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
+                {(Array.isArray(previewFood.categories)?previewFood.categories:[previewFood.category]).filter(Boolean).map(c=>(
+                  <span key={c} style={{ background:"#f5f0e8", color:"#a87800", fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>{c}</span>
+                ))}
+                {previewFood.portion && <span style={{ background:"#f0fdf4", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20 }}>📏 {previewFood.portion}</span>}
+              </div>
+              {/* Nutrition */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
+                {[["🔥","Calories",previewFood.calories,"kcal","#fff8e1","#a87800"],
+                  ["💪","Protein",previewFood.protein,"g","#e8f5e9","#2D6A4F"],
+                  ["🌾","Carbs",previewFood.carbs,"g","#e3f2fd","#1565c0"],
+                  ["🧈","Fat",previewFood.fat,"g","#fce4ec","#c62828"]
+                ].map(([ic,lbl,val,unit,bg,col])=>(
+                  <div key={lbl} style={{ background:bg, borderRadius:10, padding:"10px 4px", textAlign:"center" }}>
+                    <div style={{ fontSize:16 }}>{ic}</div>
+                    <div style={{ fontSize:16, fontWeight:700, color:col }}>{val||0}</div>
+                    <div style={{ fontSize:9, color:col, opacity:.8 }}>{unit}</div>
+                    <div style={{ fontSize:9, color:"#888", marginTop:1 }}>{lbl}</div>
+                  </div>
+                ))}
+              </div>
+              {!!previewFood.fiber && <div style={{ background:"#f3e5f5", borderRadius:8, padding:"6px 12px", fontSize:12, color:"#7b1fa2", marginBottom:14, display:"inline-block" }}>🌿 Fiber: <b>{previewFood.fiber}g</b></div>}
+              {/* Ingredients */}
+              {previewFood.ingredients?.length>0 && (
+                <div style={{ marginBottom:16 }}>
+                  <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E", marginBottom:8 }}>🧾 {lang==="hi"?"सामग्री":"Ingredients"}</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {(Array.isArray(previewFood.ingredients)?previewFood.ingredients:previewFood.ingredients.split("\n")).filter(Boolean).map((ing,idx)=>(
+                      <span key={idx} style={{ background:"#f9f5ef", border:"1px solid #ede5d8", borderRadius:20, padding:"4px 10px", fontSize:12, color:"#555" }}>{ing}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Recipe */}
+              {previewFood.recipe && (
+                <div style={{ marginBottom:16 }}>
+                  <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E", marginBottom:8 }}>👨‍🍳 {lang==="hi"?"बनाने की विधि":"Recipe"}</div>
+                  <div style={{ background:"#fffdf7", border:"1px solid #f5ecd8", borderRadius:10, padding:14, fontSize:13, color:"#555", lineHeight:1.8, whiteSpace:"pre-wrap" }}>{previewFood.recipe}</div>
+                </div>
+              )}
+              {/* YouTube */}
+              {previewFood.youtube && (
+                <a href={previewFood.youtube} target="_blank" rel="noreferrer"
+                  style={{ display:"flex", alignItems:"center", gap:10, background:"#ff0000", color:"#fff", padding:"12px 16px", borderRadius:12, textDecoration:"none", fontWeight:700, fontSize:14, marginBottom:16 }}>
+                  <span style={{ fontSize:22 }}>▶️</span>
+                  <span>{lang==="hi"?"यूट्यूब पर देखें":"Watch on YouTube"}</span>
+                </a>
+              )}
+              <button onClick={()=>{ setPreviewFood(null); startEdit(previewFood); }} className="btn btn-g" style={{ width:"100%" }}>
+                ✏️ {lang==="hi"?"संपादित करें":"Edit this food"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {form ? (
         <div>
           <button className="btn btn-g btn-sm" onClick={()=>{setForm(null);setPhotoPreview(null);}} style={{ marginBottom:16 }}>Cancel</button>
@@ -2093,7 +2167,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))", gap:13 }}>
             {filtered.map(food=>(
-              <div key={food.id||food.name} className="food-card" style={{ position:"relative" }}>
+              <div key={food.id||food.name} className="food-card" style={{ position:"relative" }} onClick={()=>setPreviewFood(food)}>
                 <button onClick={e=>{e.stopPropagation();toggleFav(food.id);}} style={{ position:"absolute", top:6, right:6, background:"rgba(255,255,255,.85)", border:"none", cursor:"pointer", fontSize:15, borderRadius:"50%", width:26, height:26, display:"flex", alignItems:"center", justifyContent:"center", zIndex:2 }}>
                   {favs[food.id]?"❤️":"🤍"}
                 </button>
@@ -2111,8 +2185,8 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
                   <span style={{ color:"#2D6A4F" }}><b>{food.protein}g</b> pro</span>
                 </div>
                 <div style={{ display:"flex", gap:6 }}>
-                  <button className="btn btn-g btn-sm" onClick={()=>startEdit(food)} style={{ flex:1 }}>Edit</button>
-                  <button className="btn btn-danger btn-sm" onClick={()=>del(food)} style={{ flex:0.6 }}>Del</button>
+                  <button className="btn btn-g btn-sm" onClick={e=>{e.stopPropagation();startEdit(food);}} style={{ flex:1 }}>Edit</button>
+                  <button className="btn btn-danger btn-sm" onClick={e=>{e.stopPropagation();del(food);}} style={{ flex:0.6 }}>Del</button>
                 </div>
               </div>
             ))}
@@ -3158,26 +3232,28 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
         {members.map((m,i)=>{
           const isThisHead = m.id===family?.head_id;
           return (
-            <div key={m.id} className="card" style={{ display:"flex", alignItems:"center", gap:14 }}>
-              <div style={{ width:46, height:46, borderRadius:"50%", background:MCOLS[i%MCOLS.length], display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:700, color:"#fff", flexShrink:0 }}>{(m.name||"?")[0]}</div>
+            <div key={m.id} className="card" style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
+              {/* Avatar */}
+              <div style={{ width:44, height:44, borderRadius:"50%", background:MCOLS[i%MCOLS.length], display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:700, color:"#fff", flexShrink:0, marginTop:2 }}>{(m.name||"?")[0]}</div>
+              {/* Info + buttons stacked */}
               <div style={{ flex:1, minWidth:0 }}>
-                <input defaultValue={m.name||m.username} onBlur={e=>e.target.value!==(m.name||m.username)&&renameMember(m,e.target.value)} style={{ border:"none", fontSize:15, fontWeight:600, color:"#1A1A2E", outline:"none", width:"100%", background:"transparent" }} readOnly={!isHead&&m.id!==member.id} />
-                <div style={{ fontSize:12, color:"#999" }}>✉️ {m.email||"(no email)"}
-                  {!m.auth_id && <span style={{ marginLeft:8, background:"#FFF3CD", color:"#856404", fontSize:10, fontWeight:700, padding:"2px 7px", borderRadius:20 }}>⏳ Invite Pending</span>}
+                {/* Name row */}
+                <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:4 }}>
+                  <input defaultValue={m.name||m.username} onBlur={e=>e.target.value!==(m.name||m.username)&&renameMember(m,e.target.value)} style={{ border:"none", fontSize:15, fontWeight:600, color:"#1A1A2E", outline:"none", background:"transparent", minWidth:0, flex:1 }} readOnly={!isHead&&m.id!==member.id} />
+                  {isThisHead && <span className="badge" style={{ background:"#fff8e1", color:"#a87800", flexShrink:0 }}>★ Head</span>}
                 </div>
-              </div>
-              <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0, flexWrap:"wrap", justifyContent:"flex-end" }}>
-                {isThisHead && <span className="badge" style={{ background:"#fff8e1", color:"#a87800" }}>★ Head</span>}
-                {!isThisHead && isHead && <button className="btn btn-g btn-sm" onClick={()=>setHead(m)} style={{ fontSize:11 }}>Make Head</button>}
-                {!m.auth_id && isHead && (
-                  <div style={{ display:"flex", gap:6 }}>
-                    <button
-                      onClick={()=>resendInvite(m)}
-                      style={{ background:"#e8f5e9", color:"#2D6A4F", border:"1px solid #c8e6c9", padding:"4px 10px", borderRadius:8, fontSize:11, cursor:"pointer", fontWeight:600 }}>
+                {/* Email */}
+                <div style={{ fontSize:12, color:"#999", marginBottom:6, wordBreak:"break-all" }}>
+                  ✉️ {m.email||"(no email)"}
+                  {!m.auth_id && <span style={{ marginLeft:8, background:"#FFF3CD", color:"#856404", fontSize:10, fontWeight:700, padding:"2px 7px", borderRadius:20 }}>⏳ Pending</span>}
+                </div>
+                {/* Action buttons */}
+                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                  {!m.auth_id && isHead && (<>
+                    <button onClick={()=>resendInvite(m)} style={{ background:"#e8f5e9", color:"#2D6A4F", border:"1px solid #c8e6c9", padding:"5px 12px", borderRadius:8, fontSize:12, cursor:"pointer", fontWeight:600 }}>
                       📧 Send Link
                     </button>
-                    <a
-                      href={`https://wa.me/?text=${encodeURIComponent(`Hi ${m.name}! You have been invited to join our Family Kitchen meal planner 👨‍👩‍👧‍👦
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`Hi ${m.name}! You have been invited to join our Family Kitchen meal planner 👨‍👩‍👧‍👦
 
 Tap this link to join:
 https://family-kitchen-gamma-rust.vercel.app?invite=true&email=${encodeURIComponent(m.email||"")}
@@ -3185,14 +3261,14 @@ https://family-kitchen-gamma-rust.vercel.app?invite=true&email=${encodeURICompon
 Your email is already pre-filled — just tap "Send me a link to set my password" and check your inbox!
 
 (Family: ${family.name})`)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ background:"#25D366", color:"#fff", border:"none", padding:"4px 10px", borderRadius:8, fontSize:11, fontWeight:600, textDecoration:"none", display:"flex", alignItems:"center", gap:4 }}>
+                      target="_blank" rel="noreferrer"
+                      style={{ background:"#25D366", color:"#fff", border:"none", padding:"5px 12px", borderRadius:8, fontSize:12, fontWeight:600, textDecoration:"none", display:"inline-flex", alignItems:"center", gap:4 }}>
                       💬 WhatsApp
                     </a>
-                  </div>
-                )}
-                {m.id!==member.id && isHead && <button className="btn btn-danger btn-sm" onClick={()=>removeMember(m)}>Remove</button>}
+                  </>)}
+                  {!isThisHead && isHead && <button className="btn btn-g btn-sm" onClick={()=>setHead(m)} style={{ fontSize:11 }}>👑 Make Head</button>}
+                  {m.id!==member.id && isHead && <button className="btn btn-danger btn-sm" onClick={()=>removeMember(m)}>Remove</button>}
+                </div>
               </div>
             </div>
           );
