@@ -358,27 +358,62 @@ const SAPPS = [
   { name:"Blinkit",   url:"https://blinkit.com/s/?q=",                        color:"#F5C518", logo:"⚡" },
   { name:"Zepto",     url:"https://www.zeptonow.com/search?query=",            color:"#9B59B6", logo:"🟣" },
   { name:"Instamart", url:"https://www.swiggy.com/instamart/search?query=",    color:"#FC8019", logo:"🛒" },
-  { name:"BigBasket", url:"https://www.bigbasket.com/ps/?q=",                  color:"#84C225", logo:"🛍️" },
+  { name:"BigBasket", url:"https://www.bigbasket.com/nc/search/?q=",           color:"#84C225", logo:"🛍️" },
   { name:"Amazon Now",url:"https://www.amazon.in/s?k=",                        color:"#FF9900", logo:"📦" },
 ];
 
 // ─── SEED DATA (inserted once on first load) ─────────────────────────────────
 const SEED_FOODS = [
-  { name:"Poha", category:"Breakfast", emoji:"🍚", calories:250, protein:6, carbs:45, fat:5, fiber:3, portion:"1 bowl (150g)", ingredients:["Flattened rice 1 cup","Onion 1 medium","Potato 1 small","Green chili 2","Mustard seeds 1 tsp","Turmeric ½ tsp","Curry leaves 8-10","Oil 1 tbsp","Lemon juice 1 tsp","Coriander to garnish"], recipe:"Heat oil, add mustard seeds and let them splutter. Add curry leaves, green chili, and onion. Sauté till golden. Add diced potato and cook 5 min. Add soaked poha, turmeric, salt. Mix well on low flame 3 min. Garnish with lemon juice and coriander.", youtube:"https://www.youtube.com/results?search_query=poha+recipe" },
-  { name:"Paratha with Curd", category:"Breakfast", emoji:"🫓", calories:380, protein:10, carbs:55, fat:14, fiber:4, portion:"2 parathas + 100g curd", ingredients:["Whole wheat flour 1 cup","Water as needed","Salt to taste","Ghee 1 tbsp","Fresh curd 100g"], recipe:"Knead soft dough with flour, water and salt. Make balls, roll into circles, cook on tawa with ghee till golden spots appear on both sides. Serve hot with fresh curd.", youtube:"https://www.youtube.com/results?search_query=paratha+recipe" },
-  { name:"Idli Sambar", category:"Breakfast", emoji:"🍢", calories:300, protein:9, carbs:55, fat:4, fiber:5, portion:"3 idlis + 1 cup sambar", ingredients:["Idli batter 3 cups","Toor dal 1 cup","Mixed vegetables","Sambar powder 2 tsp","Tamarind paste 1 tsp","Mustard seeds","Curry leaves"], recipe:"Steam idli batter in greased moulds 10-12 min. For sambar: cook dal with veggies, add tamarind, sambar powder. Temper with mustard seeds and curry leaves.", youtube:"https://www.youtube.com/results?search_query=idli+sambar+recipe" },
-  { name:"Upma", category:"Breakfast", emoji:"🥣", calories:220, protein:7, carbs:40, fat:6, fiber:3, portion:"1 bowl (180g)", ingredients:["Semolina 1 cup","Onion 1","Green chili 2","Mustard seeds 1 tsp","Urad dal 1 tsp","Curry leaves","Cashews 8-10","Water 2.5 cups","Oil 2 tbsp","Salt to taste"], recipe:"Dry roast semolina till aromatic. Heat oil, temper with mustard, urad dal, cashews. Add onion, chili, curry leaves. Sauté. Add water and salt, bring to boil. Add semolina stirring continuously. Cover and cook 3 min.", youtube:"https://www.youtube.com/results?search_query=upma+recipe" },
-  { name:"Dal Tadka Rice", category:"Lunch", emoji:"🍛", calories:420, protein:18, carbs:70, fat:8, fiber:8, portion:"1 plate (250g)", ingredients:["Yellow dal 1 cup","Basmati rice 1 cup","Onion 1","Tomato 2","Garlic 4 cloves","Cumin seeds 1 tsp","Turmeric ½ tsp","Red chili powder 1 tsp","Ghee 2 tbsp","Coriander"], recipe:"Cook dal with turmeric till soft. For tadka: heat ghee, add cumin, garlic, onion-tomato masala. Pour over dal. Cook rice separately. Serve together.", youtube:"https://www.youtube.com/results?search_query=dal+tadka+rice+recipe" },
-  { name:"Rajma Chawal", category:"Lunch", emoji:"🫘", calories:450, protein:20, carbs:75, fat:7, fiber:12, portion:"1 bowl rajma + 1 cup rice", ingredients:["Kidney beans 1 cup soaked","Basmati rice 1 cup","Onion 2 large","Tomato 3","Ginger-garlic paste 2 tsp","Rajma masala 2 tsp","Oil 2 tbsp"], recipe:"Pressure cook soaked rajma 4-5 whistles. Make onion-tomato gravy with spices. Add cooked rajma and simmer 15 min. Serve over steamed rice.", youtube:"https://www.youtube.com/results?search_query=rajma+chawal+recipe" },
-  { name:"Paneer Butter Masala", category:"Lunch", emoji:"🧀", calories:380, protein:22, carbs:18, fat:26, fiber:3, portion:"1 bowl (200g) + 2 rotis", ingredients:["Paneer 200g","Tomato puree 1 cup","Onion 1 large","Cashews 10","Cream 2 tbsp","Butter 2 tbsp","Kashmiri red chili 2 tsp","Garam masala 1 tsp"], recipe:"Sauté onions and cashews, blend smooth. Cook with tomato puree and spices. Add paneer cubes, cream and butter. Simmer 5 min. Garnish with cream.", youtube:"https://www.youtube.com/results?search_query=paneer+butter+masala+recipe" },
-  { name:"Chole Bhature", category:"Lunch", emoji:"🍽️", calories:550, protein:18, carbs:78, fat:18, fiber:14, portion:"2 bhature + 1 bowl chole", ingredients:["Chickpeas 1 cup soaked","All purpose flour 2 cups","Curd 3 tbsp","Onion 2","Tomato 3","Chole masala 2 tbsp","Baking soda ½ tsp"], recipe:"Soak chickpeas overnight, pressure cook. Make spicy gravy. For bhature, knead dough with flour, curd, baking soda. Deep fry till puffed.", youtube:"https://www.youtube.com/results?search_query=chole+bhature+recipe" },
-  { name:"Masala Chai & Biscuits", category:"Evening Snack", emoji:"☕", calories:120, protein:3, carbs:20, fat:4, fiber:0, portion:"1 cup chai + 3 biscuits", ingredients:["Milk 200ml","Water 100ml","Tea leaves 1 tsp","Sugar 2 tsp","Ginger small piece","Cardamom 2","Marie biscuits 3"], recipe:"Boil water with ginger and cardamom. Add tea leaves, milk and sugar. Simmer 3-4 min. Strain and serve with biscuits.", youtube:"https://www.youtube.com/results?search_query=masala+chai+recipe" },
-  { name:"Samosa", category:"Evening Snack", emoji:"🥟", calories:250, protein:5, carbs:35, fat:11, fiber:4, portion:"2 pieces (100g)", ingredients:["All purpose flour 2 cups","Potatoes 3 medium","Peas ½ cup","Coriander seeds 1 tsp","Cumin seeds 1 tsp","Garam masala 1 tsp","Oil for frying"], recipe:"Make pastry dough. Cook filling with mashed potato, peas and spices. Shape into triangles and deep fry till golden brown.", youtube:"https://www.youtube.com/results?search_query=samosa+recipe" },
-  { name:"Fruit Salad", category:"Evening Snack", emoji:"🍱", calories:150, protein:2, carbs:35, fat:1, fiber:5, portion:"1 bowl (200g)", ingredients:["Apple 1","Banana 1","Orange 1","Grapes 10","Pomegranate seeds 2 tbsp","Chaat masala ½ tsp","Lemon juice 1 tsp"], recipe:"Chop all fruits into bite-sized pieces. Mix together with chaat masala and lemon juice. Serve chilled.", youtube:"https://www.youtube.com/results?search_query=fruit+salad+recipe" },
-  { name:"Pakora", category:"Evening Snack", emoji:"🍘", calories:200, protein:5, carbs:24, fat:10, fiber:2, portion:"6 pieces (120g)", ingredients:["Besan 1 cup","Onion 2","Spinach handful","Green chili 2","Ajwain ½ tsp","Red chili ½ tsp","Salt to taste","Oil for frying"], recipe:"Make thick batter with besan and spices. Dip sliced onions and spinach leaves. Deep fry on medium heat till golden and crispy.", youtube:"https://www.youtube.com/results?search_query=pakora+recipe" },
-  { name:"Veg Biryani", category:"Dinner", emoji:"🍚", calories:480, protein:14, carbs:80, fat:12, fiber:8, portion:"1 plate (300g)", ingredients:["Basmati rice 2 cups","Mixed vegetables 2 cups","Onion 2 large","Biryani masala 2 tbsp","Saffron few strands","Mint leaves","Ghee 3 tbsp","Fried onions"], recipe:"Parboil rice with whole spices. Layer with cooked vegetables and masala. Top with fried onions, mint and saffron milk. Dum cook 20 min on low flame.", youtube:"https://www.youtube.com/results?search_query=veg+biryani+recipe" },
-  { name:"Roti Sabzi", category:"Dinner", emoji:"🫓", calories:320, protein:10, carbs:52, fat:9, fiber:6, portion:"3 rotis + 1 bowl sabzi", ingredients:["Whole wheat flour 1.5 cups","Seasonal vegetables 2 cups","Onion 1","Tomato 1","Spices as needed","Oil 1 tbsp"], recipe:"Make soft dough and roll thin rotis. Cook on hot tawa. For sabzi: sauté vegetables with onion-tomato base and spices till tender. Serve hot.", youtube:"https://www.youtube.com/results?search_query=roti+sabzi+recipe" },
-  { name:"Khichdi", category:"Dinner", emoji:"🥘", calories:350, protein:14, carbs:60, fat:7, fiber:6, portion:"1 bowl (250g)", ingredients:["Rice ½ cup","Moong dal ½ cup","Ghee 1 tbsp","Cumin seeds 1 tsp","Turmeric ½ tsp","Ginger 1 inch","Water 3 cups","Salt to taste"], recipe:"Wash and soak rice and dal together 20 min. Heat ghee, add cumin and ginger. Add soaked rice-dal mix, turmeric, salt and water. Pressure cook 3 whistles. Serve hot with ghee.", youtube:"https://www.youtube.com/results?search_query=khichdi+recipe" },
+  { name:"Aloo Matar", name_hi:"आलू मटर", category:"Lunch", emoji:"🥔", calories:220, protein:8, carbs:38, fat:3, youtube:"https://www.youtube.com/results?search_query=aloo+matar+recipe" },
+  { name:"Baby Corn Palak Spinach Curry", name_hi:"बेबी कॉर्न पालक करी", category:"Lunch", emoji:"🌽", calories:180, protein:10, carbs:22, fat:5 },
+  { name:"Besan Cheela", name_hi:"बेसन चीला", category:"Breakfast", emoji:"🫓", calories:180, protein:9, carbs:22, fat:5, youtube:"https://www.youtube.com/results?search_query=besan+cheela+recipe" },
+  { name:"Bhindi Masala", name_hi:"भिंडी मसाला", category:"Lunch", emoji:"💚", calories:160, protein:5, carbs:22, fat:4, youtube:"https://www.youtube.com/results?search_query=bhindi+masala+recipe" },
+  { name:"Butter Chicken", name_hi:"बटर चिकन", category:"Dinner", emoji:"🍗", calories:350, protein:30, carbs:18, fat:16, youtube:"https://www.youtube.com/results?search_query=butter+chicken+recipe" },
+  { name:"Cauliflower Curry", name_hi:"फूलगोभी करी", category:"Lunch", emoji:"🥦", calories:165, protein:7, carbs:25, fat:3 },
+  { name:"Chole Bhature", name_hi:"छोले भटूरे", category:"Lunch", emoji:"🍽️", calories:550, protein:18, carbs:78, fat:18, youtube:"https://www.youtube.com/results?search_query=chole+bhature+recipe" },
+  { name:"Dahi Aloo", name_hi:"दही आलू", category:"Lunch", emoji:"🥛", calories:210, protein:8, carbs:35, fat:3 },
+  { name:"Dal Baati Churma", name_hi:"दाल बाटी चूरमा", category:"Dinner", emoji:"🥮", calories:520, protein:22, carbs:80, fat:8, youtube:"https://www.youtube.com/results?search_query=dal+baati+churma+recipe" },
+  { name:"Dal Tadka Rice", name_hi:"दाल तड़का चावल", category:"Lunch", emoji:"🍛", calories:420, protein:18, carbs:70, fat:8, youtube:"https://www.youtube.com/results?search_query=dal+tadka+recipe" },
+  { name:"Egg Bhurji", name_hi:"अंडा भुर्जी", category:"Breakfast", emoji:"🍳", calories:220, protein:14.5, carbs:7, fat:15, youtube:"https://www.youtube.com/results?search_query=egg+bhurji+recipe" },
+  { name:"Egg Omelette", name_hi:"अंडे का आमलेट", category:"Breakfast", emoji:"🍳", calories:180, protein:13.5, carbs:3.2, fat:13 },
+  { name:"Fruit Salad", name_hi:"फ्रूट सलाद", category:"Evening Snack", emoji:"🍱", calories:150, protein:2, carbs:35, fat:1 },
+  { name:"Garlic Paneer", name_hi:"लहसुन पनीर", category:"Lunch", emoji:"🧄", calories:260, protein:17, carbs:15, fat:14 },
+  { name:"Gobhi Onion Paratha", name_hi:"गोभी प्याज पराठा", category:"Breakfast", emoji:"🫓", calories:320, protein:7.5, carbs:42, fat:13 },
+  { name:"Hariyali Paneer Tikka", name_hi:"हरियाली पनीर टिक्का", category:"Evening Snack", emoji:"🧀", calories:125, protein:11, carbs:10, fat:8.5 },
+  { name:"Idli Sambar", name_hi:"इडली सांभर", category:"Breakfast", emoji:"🍢", calories:300, protein:9, carbs:55, fat:4, youtube:"https://www.youtube.com/results?search_query=idli+sambar+recipe" },
+  { name:"Kadhi Pakodi", name_hi:"कढ़ी पकोड़ी", category:"Lunch", emoji:"🟡", calories:220, protein:10, carbs:30, fat:6, youtube:"https://www.youtube.com/results?search_query=kadhi+pakoda+recipe" },
+  { name:"Kali Dal", name_hi:"काली दाल", category:"Lunch", emoji:"⚫", calories:350, protein:20, carbs:50, fat:4, youtube:"https://www.youtube.com/results?search_query=kali+dal+recipe" },
+  { name:"Khichdi", name_hi:"खिचड़ी", category:"Dinner", emoji:"🥘", calories:350, protein:14, carbs:60, fat:7, youtube:"https://www.youtube.com/results?search_query=khichdi+recipe" },
+  { name:"Lal Masoor Dal", name_hi:"लाल मसूर दाल", category:"Lunch", emoji:"🍲", calories:210, protein:13.5, carbs:32, fat:4.5 },
+  { name:"Masala Chai & Biscuits", name_hi:"मसाला चाय और बिस्किट", category:"Evening Snack", emoji:"☕", calories:120, protein:3, carbs:20, fat:4 },
+  { name:"Masala Dosa", name_hi:"मसाला डोसा", category:"Breakfast", emoji:"🫓", calories:415, protein:9.5, carbs:62, fat:14, youtube:"https://www.youtube.com/results?search_query=masala+dosa+recipe" },
+  { name:"Matar Paneer", name_hi:"मटर पनीर", category:"Lunch", emoji:"🧀", calories:320, protein:14.5, carbs:18, fat:21, youtube:"https://www.youtube.com/results?search_query=matar+paneer+recipe" },
+  { name:"Mooli Parantha", name_hi:"मूली पराठा", category:"Breakfast", emoji:"🫓", calories:280, protein:7.2, carbs:38, fat:10.5 },
+  { name:"Moong Dal Cheela", name_hi:"मूंग दाल चीला", category:"Breakfast", emoji:"🥞", calories:180, protein:10.5, carbs:22, fat:5.5 },
+  { name:"Moong Dal Gravy", name_hi:"मूंग दाल ग्रेवी", category:"Lunch", emoji:"🍲", calories:210, protein:12.5, carbs:28, fat:6 },
+  { name:"Mushroom Spinach Roll", name_hi:"मशरूम पालक रोल", category:"Lunch", emoji:"🍄", calories:240, protein:12, carbs:35, fat:5 },
+  { name:"Oil Free Kadhai Paneer", name_hi:"बिना तेल कढ़ाई पनीर", category:"Lunch", emoji:"🧀", calories:250, protein:16, carbs:16, fat:13 },
+  { name:"Oil Free Tadka Dal", name_hi:"बिना तेल तड़का दाल", category:"Lunch", emoji:"🍲", calories:260, protein:16, carbs:42, fat:2 },
+  { name:"Pakora", name_hi:"पकोड़ा", category:"Evening Snack", emoji:"🍘", calories:200, protein:5, carbs:24, fat:10 },
+  { name:"Palak Paneer", name_hi:"पालक पनीर", category:"Dinner", emoji:"🍃", calories:280, protein:14, carbs:12, fat:18, youtube:"https://www.youtube.com/results?search_query=palak+paneer+recipe" },
+  { name:"Paneer Butter Masala", name_hi:"पनीर बटर मसाला", category:"Lunch", emoji:"🧀", calories:380, protein:22, carbs:18, fat:26, youtube:"https://www.youtube.com/results?search_query=paneer+butter+masala+recipe" },
+  { name:"Paratha with Curd", name_hi:"दही के साथ परांठा", category:"Breakfast", emoji:"🫓", calories:380, protein:10, carbs:55, fat:14 },
+  { name:"Pav Bhaji", name_hi:"पाव भाजी", category:"Street Food", emoji:"🍞", calories:420, protein:10.5, carbs:62, fat:14, youtube:"https://www.youtube.com/results?search_query=pav+bhaji+recipe" },
+  { name:"Pindi Channa", name_hi:"पिंडी छोले", category:"Lunch", emoji:"🍛", calories:320, protein:16, carbs:50, fat:6, youtube:"https://www.youtube.com/results?search_query=pindi+chana+recipe" },
+  { name:"Poha", name_hi:"पोहा", category:"Breakfast", emoji:"🍚", calories:250, protein:6, carbs:45, fat:5, youtube:"https://www.youtube.com/results?search_query=poha+recipe" },
+  { name:"Rajma Chawal", name_hi:"राजमा चावल", category:"Lunch", emoji:"🫘", calories:450, protein:20, carbs:75, fat:7, youtube:"https://www.youtube.com/results?search_query=rajma+chawal+recipe" },
+  { name:"Roti Sabzi", name_hi:"रोटी सब्जी", category:"Dinner", emoji:"🫓", calories:320, protein:10, carbs:52, fat:9 },
+  { name:"Sabudana Vada", name_hi:"साबूदाना वड़ा", category:"Evening Snack", emoji:"🟡", calories:100, protein:2.4, carbs:15, fat:5 },
+  { name:"Sambar", name_hi:"सांभर", category:"Breakfast", emoji:"🍲", calories:150, protein:7.5, carbs:22, fat:3.5 },
+  { name:"Samosa", name_hi:"समोसा", category:"Evening Snack", emoji:"🥟", calories:250, protein:5, carbs:35, fat:11 },
+  { name:"Shahi Paneer", name_hi:"शाही पनीर", category:"Lunch", emoji:"🧀", calories:310, protein:18, carbs:20, fat:16, youtube:"https://www.youtube.com/results?search_query=shahi+paneer+recipe" },
+  { name:"Shimla Mirch Paneer", name_hi:"शिमला मिर्च पनीर वाली", category:"Lunch", emoji:"🫑", calories:230, protein:15, carbs:18, fat:10 },
+  { name:"Soya Bhurji", name_hi:"सोया भुर्जी", category:"Breakfast", emoji:"🥘", calories:220, protein:18, carbs:14, fat:10 },
+  { name:"Soya Chunks Curry", name_hi:"सोया चंक्स करी", category:"Lunch", emoji:"🍛", calories:280, protein:22, carbs:18, fat:12 },
+  { name:"Sprouts Salad", name_hi:"अंकुरित सलाद", category:"Salad", emoji:"🥗", calories:150, protein:9.5, carbs:22, fat:3 },
+  { name:"Stuffed Capsicum", name_hi:"भरी हुई शिमला मिर्च", category:"Lunch", emoji:"🫑", calories:195, protein:9, carbs:30, fat:4 },
+  { name:"Tariwali Lauki", name_hi:"तरीवाली लौकी", category:"Lunch", emoji:"🥒", calories:120, protein:4, carbs:18, fat:2 },
+  { name:"Upma", name_hi:"उपमा", category:"Breakfast", emoji:"🥣", calories:220, protein:7, carbs:40, fat:6, youtube:"https://www.youtube.com/results?search_query=upma+recipe" },
 ];
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
@@ -2171,7 +2206,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
               <p style={{ color:"#999", fontSize:13 }}>{foods.length} items total</p>
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap", justifyContent:"flex-end" }}>
-              <button className="btn btn-g btn-sm" onClick={()=>setImportMode("csv")} style={{ fontSize:12 }}>CSV Import</button>
+
               <button className="btn btn-g btn-sm" onClick={()=>setImportMode("ai")} style={{ fontSize:12, borderColor:"#F4A200", color:"#F4A200" }}>AI Import</button>
               <button className="btn btn-p btn-sm" onClick={startAdd}>+ Add Item</button>
             </div>
@@ -2566,8 +2601,13 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
 
       {/* Tabs */}
       <div style={{ display:"flex", background:"#f5f0e8", borderRadius:10, padding:4, marginBottom:16, gap:2 }}>
-        {[["list",t.listTab],["shop",t.orderOnlineTab]].map(([t,l])=>(
-          <button key={t} onClick={()=>setTab(t)} style={{ flex:1, padding:"9px 4px", borderRadius:8, border:"none", background:tab===t?"#fff":"transparent", fontWeight:tab===t?700:400, fontSize:13, cursor:"pointer", color:tab===t?"#1A1A2E":"#999", boxShadow:tab===t?"0 1px 5px rgba(0,0,0,.08)":"none", transition:"all .18s" }}>{l}</button>
+        {[["list",t.listTab],["shop",t.orderOnlineTab]].map(([v,l])=>(
+          <button key={v} onClick={()=>setTab(v)} style={{ flex:1, padding:"10px 4px", borderRadius:8, border:"none",
+            background: tab===v ? (v==="shop" ? "#F4A200" : "#fff") : "transparent",
+            fontWeight: 700, fontSize:13, cursor:"pointer",
+            color: tab===v ? (v==="shop" ? "#fff" : "#1A1A2E") : "#999",
+            boxShadow: tab===v ? "0 2px 8px rgba(0,0,0,.12)" : "none",
+            transition:"all .18s" }}>{l}</button>
         ))}
       </div>
 
