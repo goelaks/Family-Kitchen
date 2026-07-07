@@ -358,7 +358,7 @@ const SAPPS = [
   { name:"Blinkit",   url:"https://blinkit.com/s/?q=",                        color:"#F5C518", logo:"⚡" },
   { name:"Zepto",     url:"https://www.zeptonow.com/search?query=",            color:"#9B59B6", logo:"🟣" },
   { name:"Instamart", url:"https://www.swiggy.com/instamart/search?query=",    color:"#FC8019", logo:"🛒" },
-  { name:"BigBasket", url:"https://www.bigbasket.com/nc/search/?q=",           color:"#84C225", logo:"🛍️" },
+  { name:"BigBasket", url:"https://www.bigbasket.com/ps/?q=",                  color:"#84C225", logo:"🛍️" },
   { name:"Amazon Now",url:"https://www.amazon.in/s?k=",                        color:"#FF9900", logo:"📦" },
 ];
 
@@ -2038,7 +2038,15 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
               {/* Recipe */}
               {previewFood.recipe && (
                 <div style={{ marginBottom:16 }}>
-                  <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E", marginBottom:8 }}>👨‍🍳 {lang==="hi"?"बनाने की विधि":"Recipe"}</div>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                    <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E" }}>👨‍🍳 {lang==="hi"?"बनाने की विधि":"Recipe"}</div>
+                    <a
+                      href={`https://translate.google.com/?sl=auto&tl=${lang==="hi"?"hi":"en"}&text=${encodeURIComponent(previewFood.recipe)}&op=translate`}
+                      target="_blank" rel="noreferrer"
+                      style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#4285F4", color:"#fff", padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:700, textDecoration:"none", flexShrink:0 }}>
+                      <span style={{ fontSize:13 }}>🌐</span> {lang==="hi" ? "अनुवाद करें" : "Translate"}
+                    </a>
+                  </div>
                   <div style={{ background:"#fffdf7", border:"1px solid #f5ecd8", borderRadius:10, padding:14, fontSize:13, color:"#555", lineHeight:1.8, whiteSpace:"pre-wrap" }}>{previewFood.recipe}</div>
                 </div>
               )}
@@ -2603,10 +2611,11 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
       <div style={{ display:"flex", background:"#f5f0e8", borderRadius:10, padding:4, marginBottom:16, gap:2 }}>
         {[["list",t.listTab],["shop",t.orderOnlineTab]].map(([v,l])=>(
           <button key={v} onClick={()=>setTab(v)} style={{ flex:1, padding:"10px 4px", borderRadius:8, border:"none",
-            background: tab===v ? (v==="shop" ? "#F4A200" : "#fff") : "transparent",
+            background: tab===v ? (v==="shop" ? "#F4A200" : "#fff") : (v==="shop" ? "rgba(244,162,0,0.12)" : "transparent"),
             fontWeight: 700, fontSize:13, cursor:"pointer",
-            color: tab===v ? (v==="shop" ? "#fff" : "#1A1A2E") : "#999",
+            color: tab===v ? (v==="shop" ? "#fff" : "#1A1A2E") : (v==="shop" ? "#c47f00" : "#999"),
             boxShadow: tab===v ? "0 2px 8px rgba(0,0,0,.12)" : "none",
+            border: tab!==v && v==="shop" ? "1.5px solid rgba(244,162,0,0.4)" : "none",
             transition:"all .18s" }}>{l}</button>
         ))}
       </div>
