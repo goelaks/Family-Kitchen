@@ -2568,7 +2568,13 @@ function ShoppingView({ genList, planner, SAPPS, showToast, isHead }) {
 
             {/* Search button */}
             {!item.checked && (
-              <a href={`${selApp.url}${encodeURIComponent(item.name.split(" ").slice(0,4).join(" "))}`}
+              <a href={`${selApp.url}${encodeURIComponent(
+                item.name
+                  .replace(/\s*[\(\[×xX\-–]\s*.*/,"") // strip (qty), [qty], × qty, - qty
+                  .replace(/\s+\d[\d\/\.]*\s*(kg|g|gm|gms|ml|l|ltr|pcs|pc|nos|cups?|tbsp|tsp|dozen|dozen|units?)\b.*/i,"") // strip trailing quantities
+                  .trim()
+                  .split(" ").slice(0,4).join(" ")
+              )}`}
                 target="_blank" rel="noreferrer"
                 onClick={()=>toggle(idx)}
                 style={{ background:selApp.color, color:selApp.color==="#F5C518"?"#1A1A2E":"#fff", padding:"7px 14px", borderRadius:9, textDecoration:"none", fontWeight:700, fontSize:12, flexShrink:0, whiteSpace:"nowrap" }}>
