@@ -196,6 +196,21 @@ const T = {
     leaveFamilyLast: "You are the only member. Leaving will permanently delete this family group and all meal plans.",
     leaveFamilyLastConfirm: "Delete family group and all data?",
     transferFirst: "Transfer Head role first",
+    makeHeadInvite: "Invite as Kitchen Head",
+    makeHeadConfirm: "Send Kitchen Head invite to",
+    makeHeadConfirmSub: "They must accept within 48 hours. You remain Head until they accept.",
+    makeHeadPending: "Pending Head invite sent to",
+    makeHeadPendingExp: "Expires in",
+    makeHeadCancel: "Cancel Invite",
+    makeHeadAccept: "Accept Head Role",
+    makeHeadDecline: "Decline",
+    makeHeadBanner: "has invited you to become the Kitchen Head",
+    makeHeadBannerSub: "You will be able to finalize menus for the family.",
+    makeHeadExpired: "Head invite expired — no transfer made.",
+    makeHeadAccepted: "You are now the Kitchen Head! 👑",
+    makeHeadDeclined: "Head invite declined.",
+    makeHeadCancelled: "Head invite cancelled.",
+    makeHeadInactiveWarn: "This member hasn't been active recently. Are you sure you want to send them the Head role invite?",
     leaving: "Leaving...",
     deleteAccount: "Delete My Account",
     deleteAccountSub: "Permanently delete your account and all your data",
@@ -308,6 +323,21 @@ const T = {
     leaveFamilyLast: "आप अकेले सदस्य हैं। छोड़ने से पूरा परिवार ग्रुप और सभी डेटा हमेशा के लिए डिलीट हो जाएगा।",
     leaveFamilyLastConfirm: "परिवार ग्रुप और सारा डेटा डिलीट करें?",
     transferFirst: "पहले हेड बदलें",
+    makeHeadInvite: "किचन हेड बनाने का निमंत्रण",
+    makeHeadConfirm: "किचन हेड का निमंत्रण भेजें",
+    makeHeadConfirmSub: "उन्हें 48 घंटे में स्वीकार करना होगा। स्वीकार होने तक आप हेड रहेंगे।",
+    makeHeadPending: "हेड निमंत्रण भेजा गया",
+    makeHeadPendingExp: "समाप्ति",
+    makeHeadCancel: "निमंत्रण रद्द करें",
+    makeHeadAccept: "हेड रोल स्वीकार करें",
+    makeHeadDecline: "अस्वीकार करें",
+    makeHeadBanner: "ने आपको किचन हेड बनने का निमंत्रण दिया है",
+    makeHeadBannerSub: "आप परिवार के लिए मेनू फाइनल कर सकेंगे।",
+    makeHeadExpired: "हेड निमंत्रण समाप्त हो गया — कोई बदलाव नहीं।",
+    makeHeadAccepted: "अब आप किचन हेड हैं! 👑",
+    makeHeadDeclined: "हेड निमंत्रण अस्वीकार कर दिया।",
+    makeHeadCancelled: "हेड निमंत्रण रद्द कर दिया।",
+    makeHeadInactiveWarn: "यह सदस्य हाल ही में सक्रिय नहीं रहा है। क्या आप वाकई उन्हें हेड निमंत्रण भेजना चाहते हैं?",
     leaving: "छोड़ रहे हैं...",
     deleteAccount: "अकाउंट डिलीट करें",
     deleteAccountSub: "आपका अकाउंट और सारा डेटा हमेशा के लिए हटा दिया जाएगा",
@@ -866,7 +896,7 @@ export default function App() {
 
           {/* MAIN */}
           <main className="main-pad" style={{ flex:1, padding:"22px 24px", overflowY:"auto", paddingBottom:120 }}>
-            {view==="dashboard" && !selDay && !selMealView && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={(d)=>navigate(()=>setSelDay(d), d)} onMealViewClick={(m)=>navigate(()=>setSelMealView(m), m)} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} />}
+            {view==="dashboard" && !selDay && !selMealView && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={(d)=>navigate(()=>setSelDay(d), d)} onMealViewClick={(m)=>navigate(()=>setSelMealView(m), m)} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} member={member} family={family} members={members} setMembers={setMembers} setFamily={setFamily} showToast={showToast} />}
             {view==="dashboard" && selMealView && !selDay && <MealWeekView meal={selMealView} days={DAYS} planner={planner} foods={foods} member={member} onBack={()=>setSelMealView(null)} onAdd={addToPlanner} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} onDayClick={(d)=>navigate(()=>{ setSelMealView(null); setSelDay(d); setSelMeal(selMealView); }, d)} />}
             {view==="dashboard" && selDay && !selMeal && <DayView day={selDay} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onBack={()=>{ setSelDay(null); }} onMealClick={(m)=>navigate(()=>setSelMeal(m), m)} MICONS={MICONS} MCOLS={MCOLS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} member={member} foods={foods} />}
             {view==="dashboard" && selDay && selMeal && <MealView day={selDay} meal={selMeal} foods={foods} member={member} onBack={()=>setSelMeal(null)} onAdd={addToPlanner} getMealSummary={getMealSummary} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
@@ -1431,9 +1461,11 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
 
   const [search, setSearch] = useState("");
   const filtered = search ? sortedFoods.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())) : sortedFoods;
+  const [previewFood, setPreviewFood] = useState(null);
 
   return (
     <div>
+      {previewFood && <FoodPreviewModal food={previewFood} onClose={()=>setPreviewFood(null)} />}
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:18 }}>
         <button className="btn btn-g btn-sm" onClick={onBack}>← Dashboard</button>
         <div>
@@ -1467,7 +1499,8 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
               {items.length>0 && (
                 <div style={{ marginTop:10, display:"flex", flexWrap:"wrap", gap:6 }}>
                   {items.map(item=>(
-                    <div key={item.id} style={{ display:"flex", alignItems:"center", gap:5, background:item.finalized?"#e8f5e9":"#f5f5f5", border:`1px solid ${item.finalized?"#c8e6c9":"#eee"}`, borderRadius:20, padding:"4px 10px", fontSize:12 }}>
+                    <div key={item.id} style={{ display:"flex", alignItems:"center", gap:5, background:item.finalized?"#e8f5e9":"#f5f5f5", border:`1px solid ${item.finalized?"#c8e6c9":"#eee"}`, borderRadius:20, padding:"4px 10px", fontSize:12, cursor:"pointer" }}
+                      onClick={e=>{ e.stopPropagation(); const f=foods.find(fd=>fd.name===item.food_name); if(f) setPreviewFood(f); }}>
                       <span>{item.food_emoji} {displayName(item.food_name)}</span>
                       <span style={{ color:"#aaa", fontSize:10 }}>— {item.member_name}</span>
                       {item.member_name===member?.name && (
@@ -1488,14 +1521,14 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))", gap:8 }}>
                     {filtered.slice(0,12).map(food=>(
-                      <div key={food.id||food.name} className="food-card" style={{ padding:10, position:"relative" }}>
+                      <div key={food.id||food.name} className="food-card" style={{ padding:10, position:"relative", cursor:"pointer" }} onClick={()=>setPreviewFood(food)}>
                         <button onClick={e=>{e.stopPropagation();toggleFav(food.id);}} style={{ position:"absolute", top:5, right:5, background:"none", border:"none", cursor:"pointer", fontSize:13 }}>
                           {favs[food.id]?"❤️":"🤍"}
                         </button>
                         <div style={{ fontSize:32, textAlign:"center", marginBottom:5 }}>{food.emoji}</div>
                         <div style={{ fontWeight:600, fontSize:12, textAlign:"center", marginBottom:2 }}>{(lang==="hi"&&food.name_hi)||food.name}</div>
                         <div style={{ fontSize:10, color:"#aaa", textAlign:"center", marginBottom:7 }}>{food.calories} kcal</div>
-                        <button className="btn btn-p btn-sm" style={{ width:"100%", fontSize:11, padding:"5px" }} onClick={()=>{ onAdd(day, meal, food); }}>+ Add</button>
+                        <button className="btn btn-p btn-sm" style={{ width:"100%", fontSize:11, padding:"5px" }} onClick={e=>{e.stopPropagation();onAdd(day,meal,food);}}>+ Add</button>
                       </div>
                     ))}
                     {filtered.length===0 && <div style={{ gridColumn:"1/-1", textAlign:"center", color:"#ccc", padding:20, fontSize:13 }}>No results for "{search}"</div>}
@@ -1516,7 +1549,7 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMealViewClick, MICONS, MCOLS, showInstallBanner, onInstall }) {
+function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMealViewClick, MICONS, MCOLS, showInstallBanner, onInstall, member, family, members, setMembers, setFamily, showToast }) {
   const t    = useT();
   const lang = useLang();
   const now = new Date();
@@ -1542,6 +1575,13 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
 
   return (
     <div>
+      {/* Head Transfer Banner — shown to invited member on dashboard */}
+      <HeadTransferBanner
+        member={member} family={family} members={members}
+        setMembers={setMembers} setFamily={setFamily}
+        showToast={showToast}
+        onHeadChange={()=>window.location.reload()}
+      />
       <div style={{ marginBottom:20 }}>
         <h2 className="serif" style={{ fontSize:26, color:"#1A1A2E" }}>{t.weeklyMealPlanner}</h2>
         <p style={{ color:"#999", fontSize:13, marginTop:4 }}>{totalWeek} {t.selectionsThisWeek} · {finalizedCount} {t.finalized}</p>
@@ -1578,15 +1618,51 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
           const isTomorrow= dateObj && (dateObj.getDate() - now.getDate() === 1 && dateObj.getMonth()===now.getMonth());
           const total     = meals.reduce((a,m)=>a+(planner.filter(p=>p.day===day&&p.meal===m).length),0);
           const finCount  = planner.filter(p=>p.day===day&&p.finalized).length;
+          if (isToday) return (
+            <div key={day} className="card card-hover" onClick={()=>onDayClick(day)}
+              style={{ border:"2px solid #F4A200", position:"relative", overflow:"hidden", gridColumn:"1 / -1" }}>
+              {/* Today header */}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
+                <div>
+                  <span style={{ background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"2px 10px", borderRadius:20, display:"inline-block", marginBottom:5 }}>{t.today}</span>
+                  <div className="serif" style={{ fontSize:19, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{t.days[day]||day}</div>
+                  {dateObj && <div style={{ fontSize:11, color:"#F4A200", fontWeight:700, marginTop:2 }}>{fmtDate(dateObj)}</div>}
+                </div>
+                {finCount>0 && (
+                  <div style={{ textAlign:"right", flexShrink:0 }}>
+                    <div style={{ fontSize:13, color:"#2D6A4F", fontWeight:700 }}>{finCount} of {meals.length} ✓</div>
+                    <div style={{ fontSize:10, color:"#aaa", marginTop:2 }}>{lang==="hi"?"फाइनल":"finalized"}</div>
+                  </div>
+                )}
+              </div>
+              {/* Meal rows with food names */}
+              {meals.map(meal=>{
+                const items = planner.filter(p=>p.day===day&&p.meal===meal);
+                const finItems = items.filter(p=>p.finalized);
+                const pendItems = items.filter(p=>!p.finalized);
+                const showFood = finItems[0] || pendItems[0];
+                return (
+                  <div key={meal} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:"1px solid #f5f0e8" }}>
+                    <span style={{ fontSize:12, color:"#888", flexShrink:0 }}>{MICONS[meal]} {t.mealShort[meal]||meal}</span>
+                    {showFood ? (
+                      finItems.length>0
+                        ? <span style={{ background:"#e8f5e9", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"2px 10px", borderRadius:20 }}>✓ {finItems[0].food_name}</span>
+                        : <span style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:600, padding:"2px 10px", borderRadius:20 }}>{pendItems[0].food_name}</span>
+                    ) : (
+                      <span style={{ background:"#f5f5f5", color:"#ccc", fontSize:11, padding:"2px 10px", borderRadius:20 }}>{lang==="hi"?"— नहीं चुना":"— not set"}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+
           return (
-            <div key={day} className="card card-hover" onClick={()=>onDayClick(day)} style={{ border: isToday?"2px solid #F4A200":"1px solid #ede5d8", position:"relative", overflow:"hidden" }}>
-              {/* Badge */}
-              {isToday && <div style={{ position:"absolute", top:0, right:0, background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>{t.today}</div>}
+            <div key={day} className="card card-hover" onClick={()=>onDayClick(day)} style={{ border: isTomorrow?"1.5px solid #2D6A4F":"1px solid #ede5d8", position:"relative", overflow:"hidden" }}>
               {isTomorrow && <div style={{ position:"absolute", top:0, right:0, background:"#2D6A4F", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>{t.tomorrow}</div>}
-              {/* Day name + date */}
               <div style={{ marginBottom:8 }}>
                 <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{t.days[day]||day}</div>
-                {dateObj && <div style={{ fontSize:11, color: isToday?"#F4A200":"#aaa", fontWeight: isToday?700:400, marginTop:2 }}>{fmtDate(dateObj)}</div>}
+                {dateObj && <div style={{ fontSize:11, color:"#aaa", marginTop:2 }}>{fmtDate(dateObj)}</div>}
               </div>
               {meals.map(meal=>{
                 const items = planner.filter(p=>p.day===day&&p.meal===meal);
@@ -1655,6 +1731,7 @@ function MealView({ day, meal, foods, member, onBack, onAdd, getMealSummary, get
   const [detail, setDetail] = useState(null);
   const [search, setSearch] = useState("");
   const searchRef = React.useRef();
+  const [previewFood, setPreviewFood] = useState(null);
 
   const mealFoods = foods.filter(f => (Array.isArray(f.categories)?f.categories:[f.category].filter(Boolean)).includes(meal));
   const currentItems = getDayMealItems(day, meal);
@@ -1738,7 +1815,7 @@ function MealView({ day, meal, foods, member, onBack, onAdd, getMealSummary, get
           <div style={{ background:"#e8f5e9", borderRadius:7, padding:"5px 3px", textAlign:"center" }}><div style={{ fontSize:13, fontWeight:700, color:"#2D6A4F" }}>{food.protein}g</div><div style={{ fontSize:9, color:"#4caf50" }}>protein</div></div>
         </div>
         <div style={{ display:"flex", gap:6 }}>
-          <button className="btn btn-g btn-sm" onClick={()=>setDetail(food)} style={{ flex:1 }}>Info</button>
+          <button className="btn btn-g btn-sm" onClick={()=>setPreviewFood(food)} style={{ flex:1 }}>Info</button>
           <button className="btn btn-p btn-sm" onClick={()=>onAdd(day,meal,food)} style={{ flex:1 }}>+ Add</button>
         </div>
       </div>
@@ -1747,6 +1824,7 @@ function MealView({ day, meal, foods, member, onBack, onAdd, getMealSummary, get
 
   return (
     <div>
+      {previewFood && <FoodPreviewModal food={previewFood} onClose={()=>setPreviewFood(null)} />}
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
         <button className="btn btn-g btn-sm" onClick={onBack}>← {day}</button>
         <div><h2 className="serif" style={{ fontSize:20, color:"#1A1A2E" }}>{MICONS[meal]} {meal} — {day}</h2></div>
@@ -1822,6 +1900,83 @@ function FoodImage({ food, size=48, radius=8 }) {
 
 
 // ─── FOOD DATABASE ─────────────────────────────────────────────────────────────
+function FoodPreviewModal({ food, onClose }) {
+  const lang = useLang();
+  if (!food) return null;
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", zIndex:9000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div onClick={e=>e.stopPropagation()} style={{ background:"#fff", borderRadius:20, width:"100%", maxWidth:480, maxHeight:"90vh", overflowY:"auto", position:"relative" }}>
+        {/* Hero */}
+        <div style={{ width:"100%", height:200, background:"linear-gradient(135deg,#FFF8F0,#FFF0CC)", borderRadius:"20px 20px 0 0", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+          {food.photo_url
+            ? <img src={food.photo_url} alt={food.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+            : <span style={{ fontSize:80 }}>{food.emoji||"🍽️"}</span>}
+          <button onClick={onClose} style={{ position:"absolute", top:12, right:12, background:"rgba(0,0,0,.4)", border:"none", borderRadius:"50%", width:32, height:32, color:"#fff", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
+        </div>
+        <div style={{ padding:20 }}>
+          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, color:"#1A1A2E", margin:"0 0 4px" }}>{(lang==="hi"&&food.name_hi)||food.name}</h2>
+          {lang==="hi" && food.name_hi && <p style={{ fontSize:13, color:"#aaa", margin:"0 0 8px" }}>{food.name}</p>}
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
+            {(Array.isArray(food.categories)?food.categories:[food.category]).filter(Boolean).map(c=>(
+              <span key={c} style={{ background:"#f5f0e8", color:"#a87800", fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>{c}</span>
+            ))}
+            {food.portion && <span style={{ background:"#f0fdf4", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20 }}>📏 {food.portion}</span>}
+          </div>
+          {/* Nutrition grid */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
+            {[["🔥","Calories",food.calories,"kcal","#fff8e1","#a87800"],
+              ["💪","Protein",food.protein,"g","#e8f5e9","#2D6A4F"],
+              ["🌾","Carbs",food.carbs,"g","#e3f2fd","#1565c0"],
+              ["🧈","Fat",food.fat,"g","#fce4ec","#c62828"]
+            ].map(([ic,lbl,val,unit,bg,col])=>(
+              <div key={lbl} style={{ background:bg, borderRadius:10, padding:"10px 4px", textAlign:"center" }}>
+                <div style={{ fontSize:16 }}>{ic}</div>
+                <div style={{ fontSize:16, fontWeight:700, color:col }}>{val||0}</div>
+                <div style={{ fontSize:9, color:col, opacity:.8 }}>{unit}</div>
+                <div style={{ fontSize:9, color:"#888", marginTop:1 }}>{lbl}</div>
+              </div>
+            ))}
+          </div>
+          {!!food.fiber && <div style={{ background:"#f3e5f5", borderRadius:8, padding:"6px 12px", fontSize:12, color:"#7b1fa2", marginBottom:14, display:"inline-block" }}>🌿 Fiber: <b>{food.fiber}g</b></div>}
+          {/* Ingredients */}
+          {food.ingredients?.length>0 && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E", marginBottom:8 }}>🧾 {lang==="hi"?"सामग्री":"Ingredients"}</div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                {(Array.isArray(food.ingredients)?food.ingredients:food.ingredients.split("\n")).filter(Boolean).map((ing,idx)=>(
+                  <span key={idx} style={{ background:"#f9f5ef", border:"1px solid #ede5d8", borderRadius:20, padding:"4px 10px", fontSize:12, color:"#555" }}>{ing}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Recipe */}
+          {food.recipe && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E" }}>👨‍🍳 {lang==="hi"?"बनाने की विधि":"Recipe"}</div>
+                <a href={`https://translate.google.com/?sl=auto&tl=${lang==="hi"?"hi":"en"}&text=${encodeURIComponent(food.recipe)}&op=translate`}
+                  target="_blank" rel="noreferrer"
+                  style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#4285F4", color:"#fff", padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:700, textDecoration:"none", flexShrink:0 }}>
+                  <span style={{ fontSize:13 }}>🌐</span> {lang==="hi"?"अनुवाद करें":"Translate"}
+                </a>
+              </div>
+              <div style={{ background:"#fffdf7", border:"1px solid #f5ecd8", borderRadius:10, padding:14, fontSize:13, color:"#555", lineHeight:1.8, whiteSpace:"pre-wrap" }}>{food.recipe}</div>
+            </div>
+          )}
+          {/* YouTube */}
+          {food.youtube && (
+            <a href={food.youtube} target="_blank" rel="noreferrer"
+              style={{ display:"flex", alignItems:"center", gap:10, background:"#ff0000", color:"#fff", padding:"12px 16px", borderRadius:12, textDecoration:"none", fontWeight:700, fontSize:14, marginBottom:4 }}>
+              <span style={{ fontSize:22 }}>▶️</span>
+              <span>{lang==="hi"?"यूट्यूब पर देखें":"Watch on YouTube"}</span>
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCnt }) {
   const t = useT();
   const lang = useLang();
@@ -1987,84 +2142,7 @@ function FoodsView({ foods, setFoods, showToast, MEALS, favs, toggleFav, usageCn
 
   return (
     <div>
-      {/* ── Food Preview Modal ───────────────────────────── */}
-      {previewFood && (
-        <div onClick={()=>setPreviewFood(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", zIndex:9000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <div onClick={e=>e.stopPropagation()} style={{ background:"#fff", borderRadius:20, width:"100%", maxWidth:480, maxHeight:"90vh", overflowY:"auto", position:"relative" }}>
-            {/* Hero */}
-            <div style={{ width:"100%", height:200, background:"linear-gradient(135deg,#FFF8F0,#FFF0CC)", borderRadius:"20px 20px 0 0", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
-              {previewFood.photo_url
-                ? <img src={previewFood.photo_url} alt={previewFood.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-                : <span style={{ fontSize:80 }}>{previewFood.emoji||"🍽️"}</span>}
-              <button onClick={()=>setPreviewFood(null)} style={{ position:"absolute", top:12, right:12, background:"rgba(0,0,0,.4)", border:"none", borderRadius:"50%", width:32, height:32, color:"#fff", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
-            </div>
-            <div style={{ padding:20 }}>
-              {/* Name */}
-              <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, color:"#1A1A2E", margin:"0 0 4px" }}>{(lang==="hi"&&previewFood.name_hi)||previewFood.name}</h2>
-              {lang==="hi" && previewFood.name_hi && <p style={{ fontSize:13, color:"#aaa", margin:"0 0 8px" }}>{previewFood.name}</p>}
-              <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:16 }}>
-                {(Array.isArray(previewFood.categories)?previewFood.categories:[previewFood.category]).filter(Boolean).map(c=>(
-                  <span key={c} style={{ background:"#f5f0e8", color:"#a87800", fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>{c}</span>
-                ))}
-                {previewFood.portion && <span style={{ background:"#f0fdf4", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20 }}>📏 {previewFood.portion}</span>}
-              </div>
-              {/* Nutrition */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
-                {[["🔥","Calories",previewFood.calories,"kcal","#fff8e1","#a87800"],
-                  ["💪","Protein",previewFood.protein,"g","#e8f5e9","#2D6A4F"],
-                  ["🌾","Carbs",previewFood.carbs,"g","#e3f2fd","#1565c0"],
-                  ["🧈","Fat",previewFood.fat,"g","#fce4ec","#c62828"]
-                ].map(([ic,lbl,val,unit,bg,col])=>(
-                  <div key={lbl} style={{ background:bg, borderRadius:10, padding:"10px 4px", textAlign:"center" }}>
-                    <div style={{ fontSize:16 }}>{ic}</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:col }}>{val||0}</div>
-                    <div style={{ fontSize:9, color:col, opacity:.8 }}>{unit}</div>
-                    <div style={{ fontSize:9, color:"#888", marginTop:1 }}>{lbl}</div>
-                  </div>
-                ))}
-              </div>
-              {!!previewFood.fiber && <div style={{ background:"#f3e5f5", borderRadius:8, padding:"6px 12px", fontSize:12, color:"#7b1fa2", marginBottom:14, display:"inline-block" }}>🌿 Fiber: <b>{previewFood.fiber}g</b></div>}
-              {/* Ingredients */}
-              {previewFood.ingredients?.length>0 && (
-                <div style={{ marginBottom:16 }}>
-                  <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E", marginBottom:8 }}>🧾 {lang==="hi"?"सामग्री":"Ingredients"}</div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                    {(Array.isArray(previewFood.ingredients)?previewFood.ingredients:previewFood.ingredients.split("\n")).filter(Boolean).map((ing,idx)=>(
-                      <span key={idx} style={{ background:"#f9f5ef", border:"1px solid #ede5d8", borderRadius:20, padding:"4px 10px", fontSize:12, color:"#555" }}>{ing}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Recipe */}
-              {previewFood.recipe && (
-                <div style={{ marginBottom:16 }}>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                    <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E" }}>👨‍🍳 {lang==="hi"?"बनाने की विधि":"Recipe"}</div>
-                    <a
-                      href={`https://translate.google.com/?sl=auto&tl=${lang==="hi"?"hi":"en"}&text=${encodeURIComponent(previewFood.recipe)}&op=translate`}
-                      target="_blank" rel="noreferrer"
-                      style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#4285F4", color:"#fff", padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:700, textDecoration:"none", flexShrink:0 }}>
-                      <span style={{ fontSize:13 }}>🌐</span> {lang==="hi" ? "अनुवाद करें" : "Translate"}
-                    </a>
-                  </div>
-                  <div style={{ background:"#fffdf7", border:"1px solid #f5ecd8", borderRadius:10, padding:14, fontSize:13, color:"#555", lineHeight:1.8, whiteSpace:"pre-wrap" }}>{previewFood.recipe}</div>
-                </div>
-              )}
-              {/* YouTube */}
-              {previewFood.youtube && (
-                <a href={previewFood.youtube} target="_blank" rel="noreferrer"
-                  style={{ display:"flex", alignItems:"center", gap:10, background:"#ff0000", color:"#fff", padding:"12px 16px", borderRadius:12, textDecoration:"none", fontWeight:700, fontSize:14, marginBottom:16 }}>
-                  <span style={{ fontSize:22 }}>▶️</span>
-                  <span>{lang==="hi"?"यूट्यूब पर देखें":"Watch on YouTube"}</span>
-                </a>
-              )}
-              <button onClick={()=>{ setPreviewFood(null); startEdit(previewFood); }} className="btn btn-g" style={{ width:"100%" }}>
-                ✏️ {lang==="hi"?"संपादित करें":"Edit this food"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {previewFood && <FoodPreviewModal food={previewFood} onClose={()=>setPreviewFood(null)} />}
 
       {form ? (
         <div>
@@ -3145,6 +3223,95 @@ function FeedbackView({ member, family, showToast }) {
 }
 
 // ─── FAMILY MANAGEMENT ────────────────────────────────────────────────────────
+// ─── HEAD TRANSFER BANNER ────────────────────────────────────────────────────
+function HeadTransferBanner({ member, family, members, setMembers, setFamily, showToast, onHeadChange }) {
+  const t    = useT();
+  const lang = useLang();
+  const [invite,  setInvite]  = useState(null);
+  const [busy,    setBusy]    = useState(false);
+  const SB_URL2 = SB_URL;
+  const SB_KEY2 = SB_KEY;
+
+  const loadInvite = React.useCallback(async () => {
+    if (!member?.id || !family?.id) return;
+    try {
+      const rows = await sbGet("head_transfer_invites",
+        `family_id=eq.${family.id}&status=eq.pending&order=created_at.desc&limit=1`);
+      if (rows?.length) setInvite(rows[0]);
+      else setInvite(null);
+    } catch(_) {}
+  }, [member?.id, family?.id]);
+
+  useEffect(() => { loadInvite(); }, [loadInvite]);
+
+  // Auto-expire check
+  useEffect(() => {
+    if (!invite) return;
+    if (new Date(invite.expires_at) < new Date()) {
+      sbPatch("head_transfer_invites", `id=eq.${invite.id}`, { status:"expired" });
+      setInvite(null);
+      showToast(t.makeHeadExpired, "error");
+    }
+  }, [invite]); // eslint-disable-line
+
+  const hoursLeft = invite ? Math.max(0, Math.round((new Date(invite.expires_at)-new Date())/3600000)) : 0;
+
+  const handleAccept = async () => {
+    setBusy(true);
+    try {
+      // Transfer role
+      await sbPatch("members", `id=eq.${invite.from_member_id}`, { role:"member" });
+      await sbPatch("members", `id=eq.${invite.to_member_id}`,   { role:"head" });
+      await sbPatch("head_transfer_invites", `id=eq.${invite.id}`, { status:"accepted", responded_at: new Date().toISOString() });
+      await sbPatch("families", `id=eq.${family.id}`, { head_id: invite.to_member_id });
+      showToast(t.makeHeadAccepted);
+      setInvite(null);
+      if (onHeadChange) onHeadChange();
+    } catch(e) { showToast(e.message,"error"); }
+    setBusy(false);
+  };
+
+  const handleDecline = async () => {
+    setBusy(true);
+    try {
+      await sbPatch("head_transfer_invites", `id=eq.${invite.id}`, { status:"declined", responded_at: new Date().toISOString() });
+      showToast(t.makeHeadDeclined);
+      setInvite(null);
+    } catch(e) { showToast(e.message,"error"); }
+    setBusy(false);
+  };
+
+  // Show to recipient only
+  if (!invite || invite.to_member_id !== member?.id) return null;
+
+  return (
+    <div style={{ background:"linear-gradient(135deg,#fff8e1,#fff3cd)", border:"2px solid #F4A200", borderRadius:14, padding:16, marginBottom:18 }}>
+      <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
+        <span style={{ fontSize:32, flexShrink:0 }}>👑</span>
+        <div style={{ flex:1 }}>
+          <div style={{ fontWeight:700, fontSize:15, color:"#1A1A2E", marginBottom:4 }}>
+            {invite.from_name} {t.makeHeadBanner}
+          </div>
+          <div style={{ fontSize:13, color:"#555", marginBottom:4 }}>{t.makeHeadBannerSub}</div>
+          <div style={{ fontSize:11, color:"#a87800", marginBottom:12 }}>
+            ⏰ {t.makeHeadPendingExp}: {hoursLeft}h {lang==="hi"?"बाकी":"remaining"}
+          </div>
+          <div style={{ display:"flex", gap:8 }}>
+            <button onClick={handleAccept} disabled={busy}
+              style={{ flex:1, background:"#F4A200", color:"#fff", border:"none", padding:"10px", borderRadius:10, fontWeight:700, fontSize:14, cursor:"pointer" }}>
+              {busy?"...":("👑 "+t.makeHeadAccept)}
+            </button>
+            <button onClick={handleDecline} disabled={busy}
+              style={{ flex:0.6, background:"#fff", color:"#888", border:"1px solid #ddd", padding:"10px", borderRadius:10, fontWeight:600, fontSize:13, cursor:"pointer" }}>
+              {t.makeHeadDecline}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FamilyView({ family, setFamily, members, setMembers, member, showToast, MCOLS, isHead, onLeaveFamily }) {
   const t    = useT();
   const lang = useLang();
@@ -3156,6 +3323,15 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
   const [showReset,    setShowReset]    = useState(false);
   const [frNewPw,      setFrNewPw]      = useState("");
   const [frConfirm,    setFrConfirm]    = useState("");
+  const [pendingInvite, setPendingInvite] = useState(null);
+
+  // Load pending head transfer invite for this family
+  useEffect(() => {
+    if (!family?.id) return;
+    sbGet("head_transfer_invites", `family_id=eq.${family.id}&status=eq.pending&order=created_at.desc&limit=1`)
+      .then(rows => setPendingInvite(rows?.[0] || null))
+      .catch(()=>{});
+  }, [family?.id]); // eslint-disable-line
   const [inviteEmail,  setInviteEmail]  = useState("");
   const [showInvitePop,setShowInvitePop]= useState(false);
 
@@ -3186,11 +3362,49 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
 
   const setHead = async (m) => {
     if (!isHead) return;
+    // Warn if member hasn't joined yet (no auth_id)
+    if (!m.auth_id) {
+      if (!window.confirm(`${t.makeHeadInactiveWarn}\n\n${m.name}`)) return;
+    } else {
+      if (!window.confirm(`${t.makeHeadConfirm} ${m.name}?\n\n${t.makeHeadConfirmSub}`)) return;
+    }
+    setBusy(true);
     try {
-      await sbPatch("families",`id=eq.${family.id}`,{ head_id:m.id });
-      setFamily(f=>({...f,head_id:m.id}));
-      showToast(`${m.name} is now the Kitchen Head!`);
+      // Cancel any existing pending invite first
+      await sbPatch("head_transfer_invites",
+        `family_id=eq.${family.id}&status=eq.pending`,
+        { status:"cancelled" }
+      );
+      // Create new 48hr invite
+      const res = await fetch(`${SB_URL}/rest/v1/head_transfer_invites`, {
+        method:"POST",
+        headers:{ ...H, Prefer:"return=representation" },
+        body: JSON.stringify({
+          family_id:      family.id,
+          from_member_id: member.id,
+          to_member_id:   m.id,
+          from_name:      member.name,
+          to_name:        m.name,
+          status:         "pending",
+          expires_at:     new Date(Date.now() + 48*3600*1000).toISOString()
+        })
+      });
+      if (!res.ok) throw new Error("Failed to send invite");
+      showToast(`${lang==="hi"?"हेड निमंत्रण भेजा गया":"Head invite sent to"} ${m.name} 👑`);
     } catch(e) { showToast(e.message,"error"); }
+    setBusy(false);
+  };
+
+  const cancelHeadInvite = async () => {
+    setBusy(true);
+    try {
+      await sbPatch("head_transfer_invites",
+        `family_id=eq.${family.id}&status=eq.pending`,
+        { status:"cancelled" }
+      );
+      showToast(t.makeHeadCancelled);
+    } catch(e) { showToast(e.message,"error"); }
+    setBusy(false);
   };
 
   const renameFamily = async () => {
@@ -3274,6 +3488,34 @@ function FamilyView({ family, setFamily, members, setMembers, member, showToast,
 
   return (
     <div>
+      {/* Head Transfer Banner — shown to invited member */}
+      <HeadTransferBanner
+        member={member} family={family} members={members}
+        setMembers={setMembers} setFamily={setFamily}
+        showToast={showToast}
+        onHeadChange={()=>window.location.reload()}
+      />
+
+      {/* Pending invite notice — shown to current Head */}
+      {isHead && pendingInvite && (
+        <div style={{ background:"#fff8e1", border:"1.5px solid #ffe082", borderRadius:12, padding:14, marginBottom:16 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
+            <div>
+              <div style={{ fontWeight:700, fontSize:14, color:"#a87800", marginBottom:4 }}>
+                ⏳ {t.makeHeadPending} {pendingInvite.to_name}
+              </div>
+              <div style={{ fontSize:12, color:"#888" }}>
+                {t.makeHeadPendingExp}: {Math.max(0,Math.round((new Date(pendingInvite.expires_at)-new Date())/3600000))}h {lang==="hi"?"बाकी":"remaining"}
+              </div>
+            </div>
+            <button onClick={cancelHeadInvite} disabled={busy}
+              style={{ background:"#fff", border:"1px solid #ddd", color:"#C1440E", padding:"6px 12px", borderRadius:8, fontSize:12, fontWeight:600, cursor:"pointer", flexShrink:0 }}>
+              {t.makeHeadCancel}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
         <div>
           <h2 className="serif" style={{ fontSize:22, color:"#1A1A2E" }}>{t.familyMembers}</h2>
