@@ -2398,8 +2398,7 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
       }).join("");
       const isTodayRow = day === new Date().toLocaleDateString("en",{weekday:"long"});
       const dayLbl     = isHindi ? (t.days[day]||day) : day;
-      const todayBadge = isTodayRow ? `<span class="today-badge">${isHindi?"आज":"TODAY"}</span>` : "";
-      return `<tr class="${isTodayRow?"today-row":""}"><td class="day-cell${isTodayRow?" today":""}">${dayLbl}${todayBadge}</td>${cols}</tr>`;
+      return `<tr><td class="day-cell">${dayLbl}</td>${cols}</tr>`;
     }).join("");
 
     const title    = isHindi ? "फैमिली किचन — साप्ताहिक मेनू" : "Family Kitchen — Weekly Menu";
@@ -2417,81 +2416,74 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
 <html><head><title>${title}</title>
 <meta charset="UTF-8"/>
 <style>
-  /* Force landscape A4 with color printing */
-  @page { size:A4 landscape; margin:8mm; }
+  @page { size:A4 landscape; margin:6mm; }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color-adjust:exact!important; }
-  html, body { width:100%; height:100%; }
-  body { font-family:Arial,'Noto Sans Devanagari',sans-serif; color:#1A1A2E; background:#f0f4f0; }
-  /* Auto-scale entire page to fit one sheet */
-  .page-wrap { width:277mm; transform-origin:top left; }
+  body { font-family:Arial,'Noto Sans Devanagari',sans-serif; color:#1A1A2E; background:#fff; }
+
+  /* Scale wrapper — JS sets transform to fit one page */
+  #page-wrap { transform-origin:top left; }
 
   /* Header */
-  .header { background:linear-gradient(135deg,#1A1A2E 0%,#2D6A4F 100%)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; padding:12px 18px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
-  .header-left h1 { font-size:28px; font-weight:900; letter-spacing:-0.5px; }
-  .header-left p  { font-size:13px; opacity:0.8; margin-top:4px; }
+  .header { background:linear-gradient(135deg,#1A1A2E,#2D6A4F)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; padding:10px 16px; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+  .header-left h1 { font-size:24px; font-weight:900; }
+  .header-left p  { font-size:12px; opacity:0.8; margin-top:3px; }
   .header-right { display:flex; gap:10px; align-items:center; }
 
-  /* Table wrapper */
-  .table-wrap { border-radius:10px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.15); }
-  table { width:100%; border-collapse:collapse; }
+  /* Table */
+  .table-wrap { border-radius:8px; overflow:hidden; border:1px solid #ddd; }
+  table { width:100%; border-collapse:collapse; table-layout:fixed; }
 
   /* Column headers */
-  thead tr th { padding:11px 14px; font-size:16px; font-weight:800; text-align:left; letter-spacing:0.3px; }
-  th.day-col  { background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; width:82px; }
-  th.meal-col-0 { background:#E65C00!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
-  th.meal-col-1 { background:#1B5E20!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
-  th.meal-col-2 { background:#C75000!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
-  th.meal-col-3 { background:#4A148C!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
+  thead tr th { padding:10px 12px; font-size:16px; font-weight:800; text-align:left; }
+  th.day-col   { background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; width:92px; }
+  th.meal-col-0{ background:#D84E00!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
+  th.meal-col-1{ background:#1B5E20!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
+  th.meal-col-2{ background:#B84000!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
+  th.meal-col-3{ background:#4A148C!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
 
-  /* Body rows */
-  tbody tr { border-bottom:2px solid rgba(255,255,255,0.6); }
+  /* Rows */
+  tbody tr { border-bottom:1px solid #e8e8e8; }
   tbody tr:last-child { border-bottom:none; }
-  td { padding:10px 13px; font-size:15px; vertical-align:top; line-height:1.6; }
-  td.day-cell { font-weight:800; font-size:17px; background:#E8EDE8!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-right:3px solid rgba(255,255,255,0.5); color:#1A1A2E!important; white-space:nowrap; min-width:82px; }
-  td.day-cell.today { background:#F4A200!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
-  td.meal-cell-0 { background:#FFF3E0!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-  td.meal-cell-1 { background:#E8F5E9!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-  td.meal-cell-2 { background:#FBE9E7!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-  td.meal-cell-3 { background:#F3E5F5!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-  td.empty { color:#bbb!important; font-style:italic; font-size:12px; }
-
-  /* Today row highlight */
-  tr.today-row td.meal-cell-0 { background:#FFE0B2!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-  tr.today-row td.meal-cell-1 { background:#C8E6C9!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-  tr.today-row td.meal-cell-2 { background:#FFCCBC!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-  tr.today-row td.meal-cell-3 { background:#E1BEE7!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-
-  .today-badge { display:inline-block; background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#F4A200!important; font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; margin-left:5px; vertical-align:middle; letter-spacing:0.5px; }
+  td { padding:9px 12px; font-size:15px; vertical-align:middle; line-height:1.5; }
+  td.day-cell { font-weight:800; font-size:16px; background:#ECEFF1!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-right:2px solid #ccc; color:#1A1A2E!important; white-space:nowrap; }
+  td.meal-cell-0{ background:#FFF3E0!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  td.meal-cell-1{ background:#E8F5E9!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  td.meal-cell-2{ background:#FBE9E7!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  td.meal-cell-3{ background:#F3E5F5!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  td.empty { color:#ccc!important; font-style:italic; }
 
   /* Footer */
-  .footer { margin-top:10px; display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-radius:8px; }
-  .footer-left { font-size:11px; color:rgba(255,255,255,0.7)!important; }
+  .footer { margin-top:7px; display:flex; justify-content:space-between; align-items:center; padding:7px 12px; background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-radius:6px; }
+  .footer-left  { font-size:11px; color:rgba(255,255,255,.7)!important; }
   .footer-brand { font-size:11px; color:#F4A200!important; font-weight:700; }
 
-  .print-btn { background:#F4A200!important; color:#fff!important; border:none; padding:10px 24px; border-radius:9px; cursor:pointer; font-size:14px; font-weight:800; margin-bottom:12px; }
+  .print-btn { background:#F4A200!important; color:#fff!important; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:800; margin-bottom:10px; }
   @media print { .no-print { display:none!important; } }
 </style>
 </head><body>
 <script>
-  // Auto-scale to fit one page on print
-  window.addEventListener('load', function() {
+  function fitPage() {
     var wrap = document.getElementById('page-wrap');
-    var scaleX = (window.innerWidth - 20) / wrap.scrollWidth;
-    var scaleY = (window.innerHeight - 20) / wrap.scrollHeight;
-    var scale  = Math.min(scaleX, scaleY, 1);
-    if (scale < 1) wrap.style.transform = 'scale(' + scale + ')';
-  });
-  window.addEventListener('beforeprint', function() {
-    var wrap = document.getElementById('page-wrap');
-    // A4 landscape usable area: 277mm x 190mm at 96dpi ~ 1047 x 719px
-    var pw = 1047, ph = 719;
-    var scaleX = pw / wrap.scrollWidth;
-    var scaleY = ph / wrap.scrollHeight;
-    var scale  = Math.min(scaleX, scaleY, 1);
-    wrap.style.transformOrigin = 'top left';
-    wrap.style.transform = scale < 1 ? 'scale(' + scale + ')' : 'none';
-    wrap.style.width = (100 / scale) + '%';
-  });
+    if (!wrap) return;
+    wrap.style.transform = 'none';
+    wrap.style.width = 'auto';
+    // A4 landscape usable at 96dpi: (297-12)mm * 3.7795 = ~1077px wide, (210-12)mm * 3.7795 = ~748px tall
+    var pw = 1077, ph = 748;
+    var ww = wrap.offsetWidth  || wrap.scrollWidth;
+    var wh = wrap.offsetHeight || wrap.scrollHeight;
+    var sx = pw / ww;
+    var sy = ph / wh;
+    var scale = Math.min(sx, sy, 1);
+    if (scale < 0.99) {
+      wrap.style.transformOrigin = 'top left';
+      wrap.style.transform = 'scale(' + scale.toFixed(3) + ')';
+      // Shrink body to avoid phantom second page
+      document.body.style.height = Math.ceil(wh * scale) + 'px';
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  window.addEventListener('load', fitPage);
+  window.addEventListener('beforeprint', fitPage);
 </script>
 
   <div id="page-wrap">
