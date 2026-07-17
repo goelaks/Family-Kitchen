@@ -1618,38 +1618,24 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
           const isTomorrow= dateObj && (dateObj.getDate() - now.getDate() === 1 && dateObj.getMonth()===now.getMonth());
           const total     = meals.reduce((a,m)=>a+(planner.filter(p=>p.day===day&&p.meal===m).length),0);
           const finCount  = planner.filter(p=>p.day===day&&p.finalized).length;
-          if (isToday) return (
-            <div key={day} className="card card-hover" onClick={()=>onDayClick(day)}
-              style={{ border:"2px solid #F4A200", position:"relative", overflow:"hidden", gridColumn:"1 / -1" }}>
-              {/* Today header */}
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
-                <div>
-                  <span style={{ background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"2px 10px", borderRadius:20, display:"inline-block", marginBottom:5 }}>{t.today}</span>
-                  <div className="serif" style={{ fontSize:19, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{t.days[day]||day}</div>
-                  {dateObj && <div style={{ fontSize:11, color:"#F4A200", fontWeight:700, marginTop:2 }}>{fmtDate(dateObj)}</div>}
-                </div>
-                {finCount>0 && (
-                  <div style={{ textAlign:"right", flexShrink:0 }}>
-                    <div style={{ fontSize:13, color:"#2D6A4F", fontWeight:700 }}>{finCount} of {meals.length} ✓</div>
-                    <div style={{ fontSize:10, color:"#aaa", marginTop:2 }}>{lang==="hi"?"फाइनल":"finalized"}</div>
-                  </div>
-                )}
-              </div>
-              {/* Meal rows with food names */}
+
+          // ── Shared meal-rows renderer for Today + Tomorrow ──────────────────
+          const mealRows = (
+            <>
               {meals.map(meal=>{
-                const items = planner.filter(p=>p.day===day&&p.meal===meal);
+                const items    = planner.filter(p=>p.day===day&&p.meal===meal);
                 const finItems = items.filter(p=>p.finalized);
-                const pendItems = items.filter(p=>!p.finalized);
+                const pendItems= items.filter(p=>!p.finalized);
                 return (
-                  <div key={meal} style={{ padding:"6px 0", borderBottom:"1px solid #f5f0e8" }}>
-                    <div style={{ fontSize:12, color:"#888", marginBottom: items.length>0 ? 5 : 0 }}>{MICONS[meal]} {t.mealShort[meal]||meal}</div>
-                    {items.length > 0 ? (
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                  <div key={meal} style={{ padding:"5px 0", borderBottom:"1px solid #f5f0e8" }}>
+                    <div style={{ fontSize:11, color:"#888", marginBottom: items.length>0 ? 4 : 0 }}>{MICONS[meal]} {t.mealShort[meal]||meal}</div>
+                    {items.length>0 ? (
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
                         {finItems.map(item=>(
-                          <span key={item.id} style={{ background:"#e8f5e9", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"2px 10px", borderRadius:20 }}>✓ {item.food_name}</span>
+                          <span key={item.id} style={{ background:"#e8f5e9", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20 }}>✓ {item.food_name}</span>
                         ))}
                         {pendItems.map(item=>(
-                          <span key={item.id} style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:600, padding:"2px 10px", borderRadius:20 }}>{item.food_name}</span>
+                          <span key={item.id} style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20 }}>{item.food_name}</span>
                         ))}
                       </div>
                     ) : (
@@ -1658,12 +1644,42 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
                   </div>
                 );
               })}
+            </>
+          );
+
+          // ── TODAY card ───────────────────────────────────────────────────────
+          if (isToday) return (
+            <div key={day} className="card card-hover" onClick={()=>onDayClick(day)}
+              style={{ border:"2px solid #F4A200", position:"relative", overflow:"hidden",
+                gridColumn:"span 1",
+                // On wider screens Today+Tomorrow share first row (each span 1)
+              }}>
+              <div style={{ position:"absolute", top:0, right:0, background:"#F4A200", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>{t.today}</div>
+              <div style={{ marginBottom:10, paddingRight:50 }}>
+                <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{t.days[day]||day}</div>
+                {dateObj && <div style={{ fontSize:11, color:"#F4A200", fontWeight:700, marginTop:2 }}>{fmtDate(dateObj)}</div>}
+              </div>
+              {mealRows}
             </div>
           );
 
+          // ── TOMORROW card ────────────────────────────────────────────────────
+          if (isTomorrow) return (
+            <div key={day} className="card card-hover" onClick={()=>onDayClick(day)}
+              style={{ border:"1.5px solid #2D6A4F", position:"relative", overflow:"hidden" }}>
+              <div style={{ position:"absolute", top:0, right:0, background:"#2D6A4F", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>{t.tomorrow}</div>
+              <div style={{ marginBottom:10, paddingRight:60 }}>
+                <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{t.days[day]||day}</div>
+                {dateObj && <div style={{ fontSize:11, color:"#aaa", marginTop:2 }}>{fmtDate(dateObj)}</div>}
+              </div>
+              {mealRows}
+            </div>
+          );
+
+          // ── OTHER days ───────────────────────────────────────────────────────
           return (
-            <div key={day} className="card card-hover" onClick={()=>onDayClick(day)} style={{ border: isTomorrow?"1.5px solid #2D6A4F":"1px solid #ede5d8", position:"relative", overflow:"hidden" }}>
-              {isTomorrow && <div style={{ position:"absolute", top:0, right:0, background:"#2D6A4F", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:"0 0 0 8px" }}>{t.tomorrow}</div>}
+            <div key={day} className="card card-hover" onClick={()=>onDayClick(day)}
+              style={{ border:"1px solid #ede5d8", position:"relative", overflow:"hidden" }}>
               <div style={{ marginBottom:8 }}>
                 <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{t.days[day]||day}</div>
                 {dateObj && <div style={{ fontSize:11, color:"#aaa", marginTop:2 }}>{fmtDate(dateObj)}</div>}
@@ -1675,9 +1691,10 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
                   <span style={{ fontSize:11, background:items.length>0?"#fff8e1":"#f5f5f5", color:items.length>0?"#a87800":"#ccc", padding:"2px 7px", borderRadius:20, fontWeight:700 }}>{items.length||"—"}</span>
                 </div>;
               })}
-              {total>0 && <div style={{ marginTop:8, fontSize:11, color:"#2D6A4F", fontWeight:500 }}>📋 {total} items · {finCount} ✓</div>}
+              {total>0 && <div style={{ marginTop:8, fontSize:11, color:"#2D6A4F", fontWeight:500 }}>📋 {total} {lang==="hi"?"आइटम":"items"} · {finCount} ✓</div>}
             </div>
           );
+
         })}
       </div>
     </div>
@@ -2401,26 +2418,29 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
 <meta charset="UTF-8"/>
 <style>
   /* Force landscape A4 with color printing */
-  @page { size:A4 landscape; margin:10mm; }
+  @page { size:A4 landscape; margin:8mm; }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color-adjust:exact!important; }
+  html, body { width:100%; height:100%; }
   body { font-family:Arial,'Noto Sans Devanagari',sans-serif; color:#1A1A2E; background:#f0f4f0; }
+  /* Auto-scale entire page to fit one sheet */
+  .page-wrap { width:277mm; transform-origin:top left; }
 
   /* Header */
-  .header { background:linear-gradient(135deg,#1A1A2E 0%,#2D6A4F 100%)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; padding:18px 24px; border-radius:14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
-  .header-left h1 { font-size:30px; font-weight:900; letter-spacing:-0.5px; }
-  .header-left p  { font-size:13px; opacity:0.8; margin-top:5px; }
-  .header-right { display:flex; gap:12px; align-items:center; }
-  .header-badge { background:rgba(255,255,255,0.15)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border:2px solid rgba(255,255,255,0.4); border-radius:10px; padding:10px 18px; text-align:center; }
-  .header-badge .num { font-size:28px; font-weight:900; color:#F4A200!important; display:block; }
-  .header-badge .lbl { font-size:11px; color:rgba(255,255,255,0.8)!important; display:block; margin-top:2px; }
+  .header { background:linear-gradient(135deg,#1A1A2E 0%,#2D6A4F 100%)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; padding:12px 18px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .header-left h1 { font-size:22px; font-weight:900; letter-spacing:-0.5px; }
+  .header-left p  { font-size:11px; opacity:0.8; margin-top:3px; }
+  .header-right { display:flex; gap:10px; align-items:center; }
+  .header-badge { background:rgba(255,255,255,0.15)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border:2px solid rgba(255,255,255,0.4); border-radius:8px; padding:7px 14px; text-align:center; }
+  .header-badge .num { font-size:22px; font-weight:900; color:#F4A200!important; display:block; }
+  .header-badge .lbl { font-size:10px; color:rgba(255,255,255,0.8)!important; display:block; margin-top:1px; }
 
   /* Table wrapper */
-  .table-wrap { border-radius:14px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.15); }
+  .table-wrap { border-radius:10px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.15); }
   table { width:100%; border-collapse:collapse; }
 
   /* Column headers */
-  thead tr th { padding:14px 16px; font-size:16px; font-weight:800; text-align:left; letter-spacing:0.3px; }
-  th.day-col  { background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; width:100px; }
+  thead tr th { padding:9px 11px; font-size:13px; font-weight:800; text-align:left; letter-spacing:0.3px; }
+  th.day-col  { background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; width:82px; }
   th.meal-col-0 { background:#E65C00!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
   th.meal-col-1 { background:#1B5E20!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
   th.meal-col-2 { background:#C75000!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
@@ -2429,14 +2449,14 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
   /* Body rows */
   tbody tr { border-bottom:2px solid rgba(255,255,255,0.6); }
   tbody tr:last-child { border-bottom:none; }
-  td { padding:13px 16px; font-size:15px; vertical-align:top; line-height:1.7; }
-  td.day-cell { font-weight:800; font-size:17px; background:#E8EDE8!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-right:3px solid rgba(255,255,255,0.5); color:#1A1A2E!important; white-space:nowrap; min-width:110px; }
+  td { padding:8px 11px; font-size:13px; vertical-align:top; line-height:1.55; }
+  td.day-cell { font-weight:800; font-size:14px; background:#E8EDE8!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-right:3px solid rgba(255,255,255,0.5); color:#1A1A2E!important; white-space:nowrap; min-width:82px; }
   td.day-cell.today { background:#F4A200!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
   td.meal-cell-0 { background:#FFF3E0!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
   td.meal-cell-1 { background:#E8F5E9!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
   td.meal-cell-2 { background:#FBE9E7!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
   td.meal-cell-3 { background:#F3E5F5!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-  td.empty { color:#bbb!important; font-style:italic; font-size:13px; }
+  td.empty { color:#bbb!important; font-style:italic; font-size:12px; }
 
   /* Today row highlight */
   tr.today-row td.meal-cell-0 { background:#FFE0B2!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
@@ -2444,18 +2464,40 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
   tr.today-row td.meal-cell-2 { background:#FFCCBC!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
   tr.today-row td.meal-cell-3 { background:#E1BEE7!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
 
-  .today-badge { display:inline-block; background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#F4A200!important; font-size:10px; font-weight:900; padding:2px 7px; border-radius:5px; margin-left:6px; vertical-align:middle; letter-spacing:0.5px; }
+  .today-badge { display:inline-block; background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#F4A200!important; font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; margin-left:5px; vertical-align:middle; letter-spacing:0.5px; }
 
   /* Footer */
-  .footer { margin-top:12px; display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-radius:10px; }
-  .footer-left { font-size:12px; color:rgba(255,255,255,0.7)!important; }
-  .footer-brand { font-size:12px; color:#F4A200!important; font-weight:700; }
+  .footer { margin-top:10px; display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-radius:8px; }
+  .footer-left { font-size:11px; color:rgba(255,255,255,0.7)!important; }
+  .footer-brand { font-size:11px; color:#F4A200!important; font-weight:700; }
 
-  .print-btn { background:#F4A200!important; color:#fff!important; border:none; padding:12px 28px; border-radius:10px; cursor:pointer; font-size:15px; font-weight:800; margin-bottom:14px; }
+  .print-btn { background:#F4A200!important; color:#fff!important; border:none; padding:10px 24px; border-radius:9px; cursor:pointer; font-size:14px; font-weight:800; margin-bottom:12px; }
   @media print { .no-print { display:none!important; } }
 </style>
 </head><body>
+<script>
+  // Auto-scale to fit one page on print
+  window.addEventListener('load', function() {
+    var wrap = document.getElementById('page-wrap');
+    var scaleX = (window.innerWidth - 20) / wrap.scrollWidth;
+    var scaleY = (window.innerHeight - 20) / wrap.scrollHeight;
+    var scale  = Math.min(scaleX, scaleY, 1);
+    if (scale < 1) wrap.style.transform = 'scale(' + scale + ')';
+  });
+  window.addEventListener('beforeprint', function() {
+    var wrap = document.getElementById('page-wrap');
+    // A4 landscape usable area: 277mm x 190mm at 96dpi ~ 1047 x 719px
+    var pw = 1047, ph = 719;
+    var scaleX = pw / wrap.scrollWidth;
+    var scaleY = ph / wrap.scrollHeight;
+    var scale  = Math.min(scaleX, scaleY, 1);
+    wrap.style.transformOrigin = 'top left';
+    wrap.style.transform = scale < 1 ? 'scale(' + scale + ')' : 'none';
+    wrap.style.width = (100 / scale) + '%';
+  });
+</script>
 
+  <div id="page-wrap">
   <div class="header">
     <div class="header-left">
       <h1>👨‍👩‍👧‍👦 ${title}</h1>
@@ -2486,10 +2528,11 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
     <span class="footer-left">🗓️ ${genText}</span>
     <span class="footer-brand">✅ ${footer}</span>
   </div>
+  </div><!-- end page-wrap -->
 
 </body></html>`);
     w.document.close();
-    setTimeout(()=>w.print(), 500);
+    setTimeout(()=>w.print(), 800);
   };
 
   return (
