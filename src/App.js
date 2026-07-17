@@ -2405,8 +2405,8 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
     const title    = isHindi ? "फैमिली किचन — साप्ताहिक मेनू" : "Family Kitchen — Weekly Menu";
     const dayLabel = isHindi ? "दिन" : "Day";
     const genText  = isHindi
-      ? `${new Date().toLocaleDateString("hi-IN",{day:"numeric",month:"long",year:"numeric"})} को बनाया · ${approved} आइटम स्वीकृत`
-      : `Generated on ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})} · ${approved} items approved`;
+      ? `${new Date().toLocaleDateString("hi-IN",{day:"numeric",month:"long",year:"numeric"})} को बनाया`
+      : `Generated on ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}`;
     const printBtn = isHindi ? "🖨️ प्रिंट करें" : "🖨️ Print";
     const footer   = isHindi
       ? `फैमिली किचन · Revive Healthcare द्वारा डिज़ाइन · ${new Date().getFullYear()}`
@@ -2427,19 +2427,16 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
 
   /* Header */
   .header { background:linear-gradient(135deg,#1A1A2E 0%,#2D6A4F 100%)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; padding:12px 18px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
-  .header-left h1 { font-size:22px; font-weight:900; letter-spacing:-0.5px; }
-  .header-left p  { font-size:11px; opacity:0.8; margin-top:3px; }
+  .header-left h1 { font-size:28px; font-weight:900; letter-spacing:-0.5px; }
+  .header-left p  { font-size:13px; opacity:0.8; margin-top:4px; }
   .header-right { display:flex; gap:10px; align-items:center; }
-  .header-badge { background:rgba(255,255,255,0.15)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border:2px solid rgba(255,255,255,0.4); border-radius:8px; padding:7px 14px; text-align:center; }
-  .header-badge .num { font-size:22px; font-weight:900; color:#F4A200!important; display:block; }
-  .header-badge .lbl { font-size:10px; color:rgba(255,255,255,0.8)!important; display:block; margin-top:1px; }
 
   /* Table wrapper */
   .table-wrap { border-radius:10px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.15); }
   table { width:100%; border-collapse:collapse; }
 
   /* Column headers */
-  thead tr th { padding:9px 11px; font-size:13px; font-weight:800; text-align:left; letter-spacing:0.3px; }
+  thead tr th { padding:11px 14px; font-size:16px; font-weight:800; text-align:left; letter-spacing:0.3px; }
   th.day-col  { background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; width:82px; }
   th.meal-col-0 { background:#E65C00!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
   th.meal-col-1 { background:#1B5E20!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
@@ -2449,8 +2446,8 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
   /* Body rows */
   tbody tr { border-bottom:2px solid rgba(255,255,255,0.6); }
   tbody tr:last-child { border-bottom:none; }
-  td { padding:8px 11px; font-size:13px; vertical-align:top; line-height:1.55; }
-  td.day-cell { font-weight:800; font-size:14px; background:#E8EDE8!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-right:3px solid rgba(255,255,255,0.5); color:#1A1A2E!important; white-space:nowrap; min-width:82px; }
+  td { padding:10px 13px; font-size:15px; vertical-align:top; line-height:1.6; }
+  td.day-cell { font-weight:800; font-size:17px; background:#E8EDE8!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-right:3px solid rgba(255,255,255,0.5); color:#1A1A2E!important; white-space:nowrap; min-width:82px; }
   td.day-cell.today { background:#F4A200!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
   td.meal-cell-0 { background:#FFF3E0!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
   td.meal-cell-1 { background:#E8F5E9!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
@@ -2504,10 +2501,6 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
       <p>${genText}</p>
     </div>
     <div style="display:flex;gap:12px;align-items:center;">
-      <div class="header-badge">
-        <span class="num">${approved}</span>
-        <span class="lbl">${isHindi?"आइटम स्वीकृत":"items approved"}</span>
-      </div>
       <button class="print-btn no-print" onclick="window.print()">${printBtn}</button>
     </div>
   </div>
