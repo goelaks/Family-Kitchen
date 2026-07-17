@@ -1576,6 +1576,7 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
 
   return (
     <div>
+      {previewFood && <FoodPreviewModal food={previewFood} onClose={()=>setPreviewFood(null)} />}
       {/* Head Transfer Banner — shown to invited member on dashboard */}
       <HeadTransferBanner
         member={member} family={family} members={members}
@@ -2404,7 +2405,8 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
         return `<td class="meal-cell ${mealCellClass[meal]||''}">${names}</td>`;
       }).join("");
       const isTodayRow = day === new Date().toLocaleDateString("en",{weekday:"long"});
-      const dayLbl     = isHindi ? (t.days[day]||day) : day;
+      const shortDay   = {"Monday":"Mon","Tuesday":"Tue","Wednesday":"Wed","Thursday":"Thu","Friday":"Fri","Saturday":"Sat","Sunday":"Sun"};
+      const dayLbl     = isHindi ? (t.days[day]||day) : (shortDay[day]||day);
       return `<tr><td class="day-cell">${dayLbl}</td>${cols}</tr>`;
     }).join("");
 
@@ -2442,7 +2444,7 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
 
   /* Column headers */
   thead tr th { padding:10px 12px; font-size:16px; font-weight:800; text-align:left; }
-  th.day-col   { background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; width:108px; min-width:108px; }
+  th.day-col   { background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; width:68px; min-width:68px; }
   th.meal-col-0{ background:#D84E00!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
   th.meal-col-1{ background:#1B5E20!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
   th.meal-col-2{ background:#B84000!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff!important; }
@@ -2452,7 +2454,7 @@ function FinalizeView({ days, meals, planner, onToggle, onGenShopping, MICONS, M
   tbody tr { border-bottom:1px solid #e8e8e8; }
   tbody tr:last-child { border-bottom:none; }
   td { padding:9px 12px; font-size:15px; vertical-align:middle; line-height:1.5; }
-  td.day-cell { font-weight:800; font-size:16px; background:#ECEFF1!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-right:2px solid #ccc; color:#1A1A2E!important; width:108px; min-width:108px; word-break:keep-all; }
+  td.day-cell { font-weight:800; font-size:16px; background:#ECEFF1!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-right:2px solid #ccc; color:#1A1A2E!important; width:68px; min-width:68px; white-space:nowrap; }
   td.meal-cell-0{ background:#FFF3E0!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
   td.meal-cell-1{ background:#E8F5E9!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
   td.meal-cell-2{ background:#FBE9E7!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
