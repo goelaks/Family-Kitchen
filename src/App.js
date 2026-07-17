@@ -896,7 +896,7 @@ export default function App() {
 
           {/* MAIN */}
           <main className="main-pad" style={{ flex:1, padding:"22px 24px", overflowY:"auto", paddingBottom:120 }}>
-            {view==="dashboard" && !selDay && !selMealView && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={(d)=>navigate(()=>setSelDay(d), d)} onMealViewClick={(m)=>navigate(()=>setSelMealView(m), m)} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} member={member} family={family} members={members} setMembers={setMembers} setFamily={setFamily} showToast={showToast} />}
+            {view==="dashboard" && !selDay && !selMealView && <DashboardView days={DAYS} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onDayClick={(d)=>navigate(()=>setSelDay(d), d)} onMealViewClick={(m)=>navigate(()=>setSelMealView(m), m)} MICONS={MICONS} MCOLS={MCOLS} showInstallBanner={showInstallBanner} onInstall={handleInstall} member={member} family={family} members={members} setMembers={setMembers} setFamily={setFamily} showToast={showToast} foods={foods} />}
             {view==="dashboard" && selMealView && !selDay && <MealWeekView meal={selMealView} days={DAYS} planner={planner} foods={foods} member={member} onBack={()=>setSelMealView(null)} onAdd={addToPlanner} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} onDayClick={(d)=>navigate(()=>{ setSelMealView(null); setSelDay(d); setSelMeal(selMealView); }, d)} />}
             {view==="dashboard" && selDay && !selMeal && <DayView day={selDay} meals={MEALS} planner={planner} getMealSummary={getMealSummary} onBack={()=>{ setSelDay(null); }} onMealClick={(m)=>navigate(()=>setSelMeal(m), m)} MICONS={MICONS} MCOLS={MCOLS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} member={member} foods={foods} />}
             {view==="dashboard" && selDay && selMeal && <MealView day={selDay} meal={selMeal} foods={foods} member={member} onBack={()=>setSelMeal(null)} onAdd={addToPlanner} getMealSummary={getMealSummary} getDayMealItems={getDayMealItems} MICONS={MICONS} isHead={isHead} onToggle={toggleFinalized} onRemove={removeFromPlanner} favs={favs} toggleFav={toggleFav} usageCnt={usageCnt} />}
@@ -1549,9 +1549,10 @@ function MealWeekView({ meal, days, planner, foods, member, onBack, onAdd, getDa
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMealViewClick, MICONS, MCOLS, showInstallBanner, onInstall, member, family, members, setMembers, setFamily, showToast }) {
+function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMealViewClick, MICONS, MCOLS, showInstallBanner, onInstall, member, family, members, setMembers, setFamily, showToast, foods }) {
   const t    = useT();
   const lang = useLang();
+  const [previewFood, setPreviewFood] = useState(null);
   const now = new Date();
   const today = now.toLocaleDateString("en",{weekday:"long"});
   const totalWeek = planner.length;
@@ -1620,6 +1621,10 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
           const finCount  = planner.filter(p=>p.day===day&&p.finalized).length;
 
           // ── Shared meal-rows renderer for Today + Tomorrow ──────────────────
+          const openPreview = (foodName) => {
+            const f = (foods||[]).find(fd=>fd.name===foodName);
+            if (f) setPreviewFood(f);
+          };
           const mealRows = (
             <>
               {meals.map(meal=>{
@@ -1632,10 +1637,12 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
                     {items.length>0 ? (
                       <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
                         {finItems.map(item=>(
-                          <span key={item.id} style={{ background:"#e8f5e9", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20 }}>✓ {item.food_name}</span>
+                          <span key={item.id} onClick={e=>{e.stopPropagation();openPreview(item.food_name);}}
+                            style={{ background:"#e8f5e9", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, cursor:"pointer" }}>✓ {item.food_name}</span>
                         ))}
                         {pendItems.map(item=>(
-                          <span key={item.id} style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20 }}>{item.food_name}</span>
+                          <span key={item.id} onClick={e=>{e.stopPropagation();openPreview(item.food_name);}}
+                            style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, cursor:"pointer" }}>{item.food_name}</span>
                         ))}
                       </div>
                     ) : (
@@ -1975,7 +1982,7 @@ function FoodPreviewModal({ food, onClose }) {
             <div style={{ marginBottom:16 }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
                 <div style={{ fontWeight:700, fontSize:14, color:"#1A1A2E" }}>👨‍🍳 {lang==="hi"?"बनाने की विधि":"Recipe"}</div>
-                <a href={`https://translate.google.com/?sl=auto&tl=${lang==="hi"?"hi":"en"}&text=${encodeURIComponent(food.recipe)}&op=translate`}
+                <a href={`https://translate.google.com/m?sl=auto&tl=${lang==="hi"?"hi":"en"}&q=${encodeURIComponent(food.recipe)}`}
                   target="_blank" rel="noreferrer"
                   style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#4285F4", color:"#fff", padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:700, textDecoration:"none", flexShrink:0 }}>
                   <span style={{ fontSize:13 }}>🌐</span> {lang==="hi"?"अनुवाद करें":"Translate"}
