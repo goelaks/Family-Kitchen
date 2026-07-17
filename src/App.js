@@ -1932,6 +1932,134 @@ function FoodImage({ food, size=48, radius=8 }) {
 function FoodPreviewModal({ food, onClose }) {
   const lang = useLang();
   if (!food) return null;
+
+  const printFoodCard = () => {
+    const isHindi = lang === "hi";
+    const name    = (isHindi && food.name_hi) ? food.name_hi : food.name;
+    const nameEn  = (isHindi && food.name_hi) ? food.name : "";
+    const cats    = (Array.isArray(food.categories) ? food.categories : [food.category]).filter(Boolean);
+    const ings    = food.ingredients ? (Array.isArray(food.ingredients) ? food.ingredients : food.ingredients.split("\n")).filter(Boolean) : [];
+
+    const nutRows = [
+      ["🔥", isHindi?"कैलोरी":"Calories", food.calories, "kcal", "#FFF8E1", "#F4A200"],
+      ["💪", isHindi?"प्रोटीन":"Protein",  food.protein,  "g",    "#E8F5E9", "#2D6A4F"],
+      ["🌾", isHindi?"कार्ब्स":"Carbs",    food.carbs,    "g",    "#E3F2FD", "#1565C0"],
+      ["🧈", isHindi?"वसा":"Fat",           food.fat,      "g",    "#FCE4EC", "#C62828"],
+    ];
+
+    const w = window.open("", "_blank");
+    w.document.write(`<!DOCTYPE html><html><head>
+<meta charset="UTF-8"/>
+<title>${name} — Family Kitchen</title>
+<style>
+  @page { size:A4 portrait; margin:12mm; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  body { font-family:Arial,'Noto Sans Devanagari',sans-serif; color:#1A1A2E; background:#fff; }
+
+  /* Header */
+  .hdr { background:linear-gradient(135deg,#1A1A2E,#2D6A4F)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#fff; padding:14px 20px; border-radius:10px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+  .hdr-title { font-size:18px; font-weight:900; color:#F4A200!important; }
+  .hdr-sub { font-size:11px; opacity:.75; margin-top:3px; }
+  .hdr-right { font-size:11px; opacity:.7; text-align:right; }
+
+  /* Food hero */
+  .hero { display:flex; gap:18px; align-items:flex-start; margin-bottom:14px; }
+  .hero-img { width:140px; height:140px; border-radius:12px; background:linear-gradient(135deg,#FFF8F0,#FFF0CC)!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; display:flex; align-items:center; justify-content:center; font-size:70px; flex-shrink:0; overflow:hidden; border:1px solid #ede5d8; }
+  .hero-img img { width:100%; height:100%; object-fit:cover; }
+  .hero-info { flex:1; }
+  .food-name { font-size:26px; font-weight:900; color:#1A1A2E; line-height:1.2; margin-bottom:4px; }
+  .food-name-en { font-size:13px; color:#aaa; margin-bottom:8px; }
+  .cats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .cat { background:#F5F0E8!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#a87800; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .portion { background:#F0FDF4!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#2D6A4F; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; }
+
+  /* Nutrition grid */
+  .nut-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .nut-cell { border-radius:10px; padding:10px 6px; text-align:center; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  .nut-icon { font-size:18px; }
+  .nut-val { font-size:18px; font-weight:900; margin-top:3px; }
+  .nut-unit { font-size:9px; opacity:.8; }
+  .nut-lbl { font-size:9px; color:#888; margin-top:2px; }
+  .fiber { background:#F3E5F5!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color:#7B1FA2; font-size:12px; padding:5px 12px; border-radius:8px; display:inline-block; margin-bottom:12px; }
+
+  /* Section headings */
+  .sec { font-size:14px; font-weight:800; color:#1A1A2E; margin-bottom:8px; border-left:4px solid #F4A200; padding-left:8px; }
+
+  /* Ingredients */
+  .ing-wrap { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .ing { background:#F9F5EF!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border:1px solid #EDE5D8; border-radius:20px; padding:4px 10px; font-size:12px; color:#555; }
+
+  /* Recipe */
+  .recipe { background:#FFFDF7!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border:1px solid #F5ECD8; border-radius:10px; padding:14px; font-size:13px; color:#555; line-height:1.8; white-space:pre-wrap; margin-bottom:14px; }
+
+  /* Footer */
+  .ftr { margin-top:14px; background:#1A1A2E!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; border-radius:8px; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .ftr-l { font-size:11px; color:rgba(255,255,255,.6)!important; }
+  .ftr-r { font-size:11px; color:#F4A200!important; font-weight:700; }
+
+  .print-btn { background:#F4A200!important; color:#fff!important; border:none; padding:9px 22px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:800; margin-bottom:14px; }
+  @media print { .no-print { display:none!important; } }
+</style>
+</head><body>
+<button class="print-btn no-print" onclick="window.print()">🖨️ ${isHindi?"प्रिंट करें":"Print"}</button>
+
+<!-- Header -->
+<div class="hdr">
+  <div>
+    <div class="hdr-title">👨‍👩‍👧‍👦 Family Kitchen</div>
+    <div class="hdr-sub">फैमिली किचन · Designed by Revive Healthcare</div>
+  </div>
+  <div class="hdr-right">${new Date().toLocaleDateString(isHindi?"hi-IN":"en-IN",{day:"numeric",month:"long",year:"numeric"})}</div>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-img">
+    ${food.photo_url ? `<img src="${food.photo_url}" alt="${name}"/>` : `<span>${food.emoji||"🍽️"}</span>`}
+  </div>
+  <div class="hero-info">
+    <div class="food-name">${name}</div>
+    ${nameEn ? `<div class="food-name-en">${nameEn}</div>` : ""}
+    <div class="cats">
+      ${cats.map(c=>`<span class="cat">${c}</span>`).join("")}
+      ${food.portion ? `<span class="portion">📏 ${food.portion}</span>` : ""}
+    </div>
+    <!-- Nutrition -->
+    <div class="nut-grid">
+      ${nutRows.map(([ic,lbl,val,unit,bg,col])=>`
+        <div class="nut-cell" style="background:${bg}!important;">
+          <div class="nut-icon">${ic}</div>
+          <div class="nut-val" style="color:${col}!important;">${val||0}</div>
+          <div class="nut-unit" style="color:${col}!important;">${unit}</div>
+          <div class="nut-lbl">${lbl}</div>
+        </div>`).join("")}
+    </div>
+    ${food.fiber ? `<div class="fiber">🌿 ${isHindi?"फाइबर":"Fiber"}: <b>${food.fiber}g</b></div>` : ""}
+  </div>
+</div>
+
+${ings.length > 0 ? `
+<div class="sec">🧾 ${isHindi?"सामग्री":"Ingredients"}</div>
+<div class="ing-wrap">${ings.map(i=>`<span class="ing">${i}</span>`).join("")}</div>` : ""}
+
+${food.recipe ? `
+<div class="sec">👨‍🍳 ${isHindi?"बनाने की विधि":"Recipe"}</div>
+<div class="recipe">${food.recipe}</div>` : ""}
+
+${food.youtube ? `<div style="font-size:12px;color:#aaa;margin-bottom:12px;">▶️ ${isHindi?"यूट्यूब":"YouTube"}: <span style="color:#1565C0;">${food.youtube}</span></div>` : ""}
+
+<!-- Footer -->
+<div class="ftr">
+  <span class="ftr-l">Family Kitchen — ${isHindi?"फैमिली किचन रेसिपी कार्ड":"Recipe Card"}</span>
+  <span class="ftr-r">✅ Revive Healthcare · ${new Date().getFullYear()}</span>
+</div>
+
+<script>window.addEventListener('load',function(){ var b=document.body; var s=Math.min((window.innerWidth-20)/b.scrollWidth,(window.innerHeight-20)/b.scrollHeight,1); if(s<1){ b.style.transform='scale('+s+')'; b.style.transformOrigin='top left'; } }); window.addEventListener('beforeprint',function(){ document.body.style.transform='none'; });</script>
+</body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
+
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", zIndex:9000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
       <div onClick={e=>e.stopPropagation()} style={{ background:"#fff", borderRadius:20, width:"100%", maxWidth:480, maxHeight:"90vh", overflowY:"auto", position:"relative" }}>
@@ -1995,11 +2123,16 @@ function FoodPreviewModal({ food, onClose }) {
           {/* YouTube */}
           {food.youtube && (
             <a href={food.youtube} target="_blank" rel="noreferrer"
-              style={{ display:"flex", alignItems:"center", gap:10, background:"#ff0000", color:"#fff", padding:"12px 16px", borderRadius:12, textDecoration:"none", fontWeight:700, fontSize:14, marginBottom:4 }}>
+              style={{ display:"flex", alignItems:"center", gap:10, background:"#ff0000", color:"#fff", padding:"12px 16px", borderRadius:12, textDecoration:"none", fontWeight:700, fontSize:14, marginBottom:12 }}>
               <span style={{ fontSize:22 }}>▶️</span>
               <span>{lang==="hi"?"यूट्यूब पर देखें":"Watch on YouTube"}</span>
             </a>
           )}
+          {/* Print button */}
+          <button onClick={printFoodCard}
+            style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8, background:"#1A1A2E", color:"#fff", border:"none", padding:"12px", borderRadius:12, fontWeight:700, fontSize:14, cursor:"pointer" }}>
+            🖨️ {lang==="hi"?"रेसिपी कार्ड प्रिंट करें":"Print Recipe Card"}
+          </button>
         </div>
       </div>
     </div>
