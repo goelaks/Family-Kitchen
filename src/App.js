@@ -1637,14 +1637,18 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
                     <div style={{ fontSize:11, color:"#888", marginBottom: items.length>0 ? 4 : 0 }}>{MICONS[meal]} {t.mealShort[meal]||meal}</div>
                     {items.length>0 ? (
                       <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
-                        {finItems.map(item=>(
-                          <span key={item.id} onClick={e=>{e.stopPropagation();openPreview(item.food_name);}}
-                            style={{ background:"#e8f5e9", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, cursor:"pointer" }}>✓ {item.food_name}</span>
-                        ))}
-                        {pendItems.map(item=>(
-                          <span key={item.id} onClick={e=>{e.stopPropagation();openPreview(item.food_name);}}
-                            style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, cursor:"pointer" }}>{item.food_name}</span>
-                        ))}
+                        {finItems.map(item=>{
+                          const fd=(foods||[]).find(f=>f.name===item.food_name);
+                          const dn=(lang==="hi"&&fd?.name_hi)||item.food_name;
+                          return <span key={item.id} onClick={e=>{e.stopPropagation();openPreview(item.food_name);}}
+                            style={{ background:"#e8f5e9", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, cursor:"pointer" }}>✓ {dn}</span>;
+                        })}
+                        {pendItems.map(item=>{
+                          const fd=(foods||[]).find(f=>f.name===item.food_name);
+                          const dn=(lang==="hi"&&fd?.name_hi)||item.food_name;
+                          return <span key={item.id} onClick={e=>{e.stopPropagation();openPreview(item.food_name);}}
+                            style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, cursor:"pointer" }}>{dn}</span>;
+                        })}
                       </div>
                     ) : (
                       <span style={{ background:"#f5f5f5", color:"#ccc", fontSize:11, padding:"2px 8px", borderRadius:20 }}>{lang==="hi"?"— नहीं चुना":"— not set"}</span>
@@ -1684,22 +1688,42 @@ function DashboardView({ days, meals, planner, getMealSummary, onDayClick, onMea
             </div>
           );
 
-          // ── OTHER days ───────────────────────────────────────────────────────
+          // ── OTHER days — same food chips as Today/Tomorrow ──────────────────
           return (
             <div key={day} className="card card-hover" onClick={()=>onDayClick(day)}
               style={{ border:"1px solid #ede5d8", position:"relative", overflow:"hidden" }}>
-              <div style={{ marginBottom:8 }}>
+              <div style={{ marginBottom:8, paddingRight:8 }}>
                 <div className="serif" style={{ fontSize:17, fontWeight:700, color:"#1A1A2E", lineHeight:1.2 }}>{t.days[day]||day}</div>
                 {dateObj && <div style={{ fontSize:11, color:"#aaa", marginTop:2 }}>{fmtDate(dateObj)}</div>}
               </div>
               {meals.map(meal=>{
-                const items = planner.filter(p=>p.day===day&&p.meal===meal);
-                return <div key={meal} className="meal-row">
-                  <span style={{ fontSize:12, color:"#888" }}>{MICONS[meal]} {t.mealShort[meal]||meal}</span>
-                  <span style={{ fontSize:11, background:items.length>0?"#fff8e1":"#f5f5f5", color:items.length>0?"#a87800":"#ccc", padding:"2px 7px", borderRadius:20, fontWeight:700 }}>{items.length||"—"}</span>
-                </div>;
+                const items    = planner.filter(p=>p.day===day&&p.meal===meal);
+                const finItems = items.filter(p=>p.finalized);
+                const pendItems= items.filter(p=>!p.finalized);
+                return (
+                  <div key={meal} style={{ padding:"5px 0", borderBottom:"1px solid #f5f0e8" }}>
+                    <div style={{ fontSize:11, color:"#888", marginBottom:items.length>0?4:0 }}>{MICONS[meal]} {t.mealShort[meal]||meal}</div>
+                    {items.length>0 ? (
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
+                        {finItems.map(item=>{
+                          const fd=(foods||[]).find(f=>f.name===item.food_name);
+                          const dn=(lang==="hi"&&fd?.name_hi)||item.food_name;
+                          return <span key={item.id} onClick={e=>{e.stopPropagation();openPreview(item.food_name);}}
+                            style={{ background:"#e8f5e9", color:"#2D6A4F", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, cursor:"pointer" }}>✓ {dn}</span>;
+                        })}
+                        {pendItems.map(item=>{
+                          const fd=(foods||[]).find(f=>f.name===item.food_name);
+                          const dn=(lang==="hi"&&fd?.name_hi)||item.food_name;
+                          return <span key={item.id} onClick={e=>{e.stopPropagation();openPreview(item.food_name);}}
+                            style={{ background:"#fff8e1", color:"#a87800", fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, cursor:"pointer" }}>{dn}</span>;
+                        })}
+                      </div>
+                    ) : (
+                      <span style={{ background:"#f5f5f5", color:"#ccc", fontSize:11, padding:"2px 8px", borderRadius:20 }}>{lang==="hi"?"— नहीं चुना":"— not set"}</span>
+                    )}
+                  </div>
+                );
               })}
-              {total>0 && <div style={{ marginTop:8, fontSize:11, color:"#2D6A4F", fontWeight:500 }}>📋 {total} {lang==="hi"?"आइटम":"items"} · {finCount} ✓</div>}
             </div>
           );
 
